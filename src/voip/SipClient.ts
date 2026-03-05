@@ -17,7 +17,7 @@ class SipClient {
     await SipNative.initialize({ platform: Platform.OS });
   }
 
-  async register(params: { sipDomain: string; username: string; password: string; transport?: 'udp'|'tcp'|'tls' }) {
+  async register(params: { sipDomain: string; username: string; password: string; transport?: 'udp' | 'tcp' | 'tls' }) {
     return SipNative.register(params);
   }
 

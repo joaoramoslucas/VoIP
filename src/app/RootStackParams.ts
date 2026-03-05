@@ -1,5 +1,5 @@
 export type RootStackParams = {
     Call: undefined;
-    Dialer: undefined;
+    SipDialer: undefined;
     SipLogin: undefined;
 }

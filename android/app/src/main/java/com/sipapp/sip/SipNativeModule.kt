@@ -34,9 +34,52 @@ class SipNativeModule(private val reactContext: ReactApplicationContext) :
         }
     }
 
-    override fun getName(): String = "SipNative"
+    override fun getName(): String = "SipNativeModule"
 
     // ===== Helpers: Eventos RN =====
+
+    private fun tryEnableEchoFeaturesSafely(core: Core) {
+    // Tenta habilitar echo cancellation / echo limiter em VÁRIAS versões do Linphone
+        fun tryCallBooleanSetter(methodName: String, value: Boolean): Boolean {
+            return try {
+                val m = core.javaClass.methods.firstOrNull { it.name == methodName && it.parameterTypes.size == 1 }
+                if (m != null) {
+                    m.invoke(core, value)
+                    Log.i(logTag, "Audio tweak OK: $methodName($value)")
+                    true
+                } else false
+            } catch (t: Throwable) {
+                Log.w(logTag, "Audio tweak FAIL: $methodName($value) -> ${t.message}")
+                false
+            }
+        }
+
+        fun trySetBooleanProperty(setterName: String, value: Boolean): Boolean {
+            // Kotlin property geralmente vira setter setXxx(boolean)
+            return tryCallBooleanSetter(setterName, value)
+        }
+
+        // Echo Cancellation
+        val echoCancellationEnabled =
+            tryCallBooleanSetter("enableEchoCancellation", true) ||
+            trySetBooleanProperty("setEchoCancellationEnabled", true) ||
+            trySetBooleanProperty("setEchoCancellation", true)
+
+        if (!echoCancellationEnabled) {
+            Log.w(logTag, "EchoCancellation: não disponível neste Linphone SDK (ok, seguindo sem).")
+        }
+
+        // Echo Limiter
+        val echoLimiterEnabled =
+            tryCallBooleanSetter("enableEchoLimiter", true) ||
+            trySetBooleanProperty("setEchoLimiterEnabled", true) ||
+            trySetBooleanProperty("setEchoLimiter", true)
+
+        if (!echoLimiterEnabled) {
+            Log.w(logTag, "EchoLimiter: não disponível neste Linphone SDK (ok, seguindo sem).")
+        }
+    }
+
     private fun emitEventToReactNative(eventName: String, payload: WritableMap) {
         reactContext
             .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
@@ -198,55 +241,82 @@ class SipNativeModule(private val reactContext: ReactApplicationContext) :
 
             val linphoneFactory = Factory.instance()
 
-            // ✅ Debug ANTES do createCore()
             try {
                 linphoneFactory.setDebugMode(true, "Linphone")
                 Log.i(logTag, "Linphone debugMode ON")
-            } catch (t: Throwable) {
-                Log.w(logTag, "setDebugMode não disponível: ${t.message}")
-            }
+            } catch (_: Throwable) {}
 
-            // ✅ Log collection (opcional)
             try {
                 linphoneFactory.enableLogCollection(LogCollectionState.Enabled)
-                Log.i(logTag, "Linphone logCollection ENABLED")
-            } catch (t: Throwable) {
-                Log.w(logTag, "enableLogCollection não disponível: ${t.message}")
-            }
+            } catch (_: Throwable) {}
 
             val core = linphoneFactory.createCore(null, null, reactContext)
             linphoneCore = core
 
-            // ✅ NAT / STUN / ICE
+            // ==============================
+            // NAT / STUN / ICE
+            // ==============================
+
             val natPolicy = core.createNatPolicy()
             natPolicy.stunServer = "stun.linphone.org"
             natPolicy.isStunEnabled = true
-            try { natPolicy.isIceEnabled = false } catch (_: Throwable) {}
+
+            try { natPolicy.isIceEnabled = true } catch (_: Throwable) {}
+            try { natPolicy.isTurnEnabled = false } catch (_: Throwable) {}
+            try { natPolicy.isUpnpEnabled = false } catch (_: Throwable) {}
+
             core.natPolicy = natPolicy
+
+            // ==============================
+            // AUDIO IMPROVEMENTS
+            // ==============================
+
+            try {
+                tryEnableEchoFeaturesSafely(core)
+            } catch (t: Throwable) {
+                Log.w(logTag, "Audio improvements skipped: ${t.message}")
+            }
 
             core.isMicEnabled = true
 
-            // ✅ CODECS: só os mais compatíveis (sem usar codec.isEnabled)
+            // ==============================
+            // CODECS
+            // ==============================
+
             try {
                 val audioPayloadTypes = core.audioPayloadTypes
-                audioPayloadTypes.forEach { payloadType ->
-                    val getMimeTypeMethod = payloadType.javaClass.methods
-                        .firstOrNull { it.name == "getMimeType" && it.parameterTypes.isEmpty() }
 
-                    val mimeTypeLower = (getMimeTypeMethod?.invoke(payloadType) as? String ?: "").lowercase()
-                    val isAllowed = (mimeTypeLower == "opus" || mimeTypeLower == "pcmu" || mimeTypeLower == "pcma")
+                audioPayloadTypes.forEach { payloadType ->
+                    val getMimeTypeMethod =
+                        payloadType.javaClass.methods.firstOrNull {
+                            it.name == "getMimeType" && it.parameterTypes.isEmpty()
+                        }
+
+                    val mimeTypeLower =
+                        (getMimeTypeMethod?.invoke(payloadType) as? String ?: "").lowercase()
+
+                    val isAllowed =
+                        mimeTypeLower == "opus" ||
+                        mimeTypeLower == "pcmu" ||
+                        mimeTypeLower == "pcma"
 
                     setPayloadEnabledCompat(payloadType, isAllowed)
                 }
+
                 Log.i(logTag, "CODECS filtered: opus/pcmu/pcma")
-                
+
                 logEnabledAudioCodecs(core)
 
             } catch (t: Throwable) {
                 Log.w(logTag, "Falha ao configurar codecs: ${t.message}")
             }
 
+            // ==============================
+            // LISTENER
+            // ==============================
+
             coreListener = object : CoreListenerStub() {
+
                 override fun onRegistrationStateChanged(
                     core: Core,
                     proxyConfig: ProxyConfig,
@@ -254,7 +324,12 @@ class SipNativeModule(private val reactContext: ReactApplicationContext) :
                     message: String
                 ) {
                     val mapped = mapRegistrationState(state)
-                    Log.i(logTag, "REG state=$state mapped=$mapped message=$message proxyDomain=${proxyConfig.domain}")
+
+                    Log.i(
+                        logTag,
+                        "REG state=$state mapped=$mapped message=$message proxyDomain=${proxyConfig.domain}"
+                    )
+
                     emitRegistrationState(mapped, message)
                 }
 
@@ -264,57 +339,48 @@ class SipNativeModule(private val reactContext: ReactApplicationContext) :
                     state: Call.State,
                     message: String
                 ) {
+
                     val mapped = mapCallState(state)
 
-                    val remote = try { call.remoteAddress?.asStringUriOnly() } catch (_: Throwable) { null }
-                    val direction = try { call.dir?.toString() } catch (_: Throwable) { null }
-                    val reason = try { call.reason?.toString() } catch (_: Throwable) { null }
-                    val sipCode = try { call.errorInfo?.protocolCode } catch (_: Throwable) { null }
-                    val sipPhrase = try { call.errorInfo?.phrase } catch (_: Throwable) { null }
+                    val remote =
+                        try { call.remoteAddress?.asStringUriOnly() }
+                        catch (_: Throwable) { null }
 
-                    Log.i(logTag, "CALL state=$state mapped=$mapped msg=$message remote=$remote dir=$direction reason=$reason sipCode=$sipCode sipPhrase=$sipPhrase")
+                    val sipCode =
+                        try { call.errorInfo?.protocolCode }
+                        catch (_: Throwable) { null }
 
-                    // ✅ bônus: quando der erro, tenta logar o ErrorInfo mais completo
-                    if (state == Call.State.Error) {
-                        try {
-                            val ei = call.errorInfo
-                            val protocolCode = try { ei?.protocolCode } catch (_: Throwable) { null }
-                            val phrase = try { ei?.phrase } catch (_: Throwable) { null }
+                    val sipPhrase =
+                        try { call.errorInfo?.phrase }
+                        catch (_: Throwable) { null }
 
-                            // alguns SDKs têm "reason" / "details" / "subErrorInfo"
-                            val detailsMethod = ei?.javaClass?.methods?.firstOrNull { it.name == "getDetails" }
-                            val details = detailsMethod?.invoke(ei) as? String
-
-                            Log.e(logTag, "ErrorInfo: code=$protocolCode phrase=$phrase details=$details raw=$ei")
-                        } catch (t: Throwable) {
-                            Log.e(logTag, "Falha lendo ErrorInfo: ${t.message}")
-                        }
-                    }
+                    Log.i(
+                        logTag,
+                        "CALL state=$state mapped=$mapped msg=$message remote=$remote sipCode=$sipCode"
+                    )
 
                     if (state == Call.State.IncomingReceived) {
                         emitIncomingCall(remote ?: "unknown")
                     }
 
-                    val extraMessage = buildString {
-                        if (!message.isNullOrBlank()) append(message)
-                        if (sipCode != null) append(" [sip=$sipCode]")
-                        if (!sipPhrase.isNullOrBlank()) append(" $sipPhrase")
-                        if (!reason.isNullOrBlank()) append(" reason=$reason")
-                    }.trim()
-
-                    emitCallState(mapped, extraMessage)
+                    emitCallState(mapped, message)
                 }
             }
 
             core.addListener(coreListener)
+
             core.start()
+
             startIterateLoopIfNeeded()
 
-            emitRegistrationState("none", "Core inicializado ✅")
+            emitRegistrationState("none", "Core inicializado")
+
             promise.resolve(true)
 
         } catch (exception: Exception) {
+
             Log.e(logTag, "initialize() error: ${exception.message}", exception)
+
             promise.reject("INIT_ERROR", exception.message, exception)
         }
     }
@@ -531,6 +597,7 @@ class SipNativeModule(private val reactContext: ReactApplicationContext) :
 
     @ReactMethod
     fun hangup(promise: Promise) {
+        Log.i(logTag, "hangup() called")
         try {
             ensureCoreInitializedOrThrow()
 
@@ -546,10 +613,13 @@ class SipNativeModule(private val reactContext: ReactApplicationContext) :
 
     @ReactMethod
     fun setMute(params: ReadableMap, promise: Promise) {
+        val muted = params.getBoolean("muted")
+        Log.i(logTag, "setMute() called muted=$muted")
+        
         try {
             ensureCoreInitializedOrThrow()
 
-            val muted = params.getBoolean("muted")
+            // val muted = params.getBoolean("muted")
             val core = linphoneCore!!
 
             core.isMicEnabled = !muted
@@ -562,10 +632,13 @@ class SipNativeModule(private val reactContext: ReactApplicationContext) :
 
     @ReactMethod
     fun setSpeaker(params: ReadableMap, promise: Promise) {
+        val speakerOn = params.getBoolean("speakerOn")
+        Log.i(logTag, "setSpeaker() called speakerOn=$speakerOn")
+
         try {
             ensureCoreInitializedOrThrow()
 
-            val speakerOn = params.getBoolean("speakerOn")
+            // val speakerOn = params.getBoolean("speakerOn")
             val core = linphoneCore!!
 
             // Saída de áudio: o Linphone gerencia via AudioDevice

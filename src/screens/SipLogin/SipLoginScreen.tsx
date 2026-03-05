@@ -34,7 +34,7 @@ export const SipLoginScreen: React.FC = () => {
         });
 
         // mudar pra navegar só quando registration.state === 'ok'
-        navigation.replace('Dialer');
+        navigation.replace('SipDialer');
     };
 
     const renderTransportChip = (value: SipTransport, label: string) => {
@@ -61,33 +61,33 @@ export const SipLoginScreen: React.FC = () => {
             <View style={s.card}>
                 <Text style={s.label}>Domínio / Servidor SIP</Text>
                 <TextInput
+                    style={s.input}
+                    autoCapitalize="none"
                     value={sipDomainInput}
-                    onChangeText={setSipDomainInput}
                     placeholder="ex: sip.domain.com"
                     placeholderTextColor="#66739A"
-                    autoCapitalize="none"
-                    style={s.input}
+                    onChangeText={setSipDomainInput}
                 />
 
                 <Text style={s.label}>Usuário / Ramal</Text>
                 <TextInput
+                    style={s.input}
                     value={usernameInput}
-                    onChangeText={setUsernameInput}
+                    autoCapitalize="none"
                     placeholder="ex: 1001"
                     placeholderTextColor="#66739A"
-                    autoCapitalize="none"
-                    style={s.input}
+                    onChangeText={setUsernameInput}
                 />
 
                 <Text style={s.label}>Senha</Text>
                 <TextInput
+                    secureTextEntry
+                    style={s.input}
+                    autoCapitalize="none"
                     value={passwordInput}
                     onChangeText={setPasswordInput}
-                    placeholder="(opcional em alguns servidores)"
                     placeholderTextColor="#66739A"
-                    secureTextEntry
-                    autoCapitalize="none"
-                    style={s.input}
+                    placeholder="(opcional em alguns servidores)"
                 />
 
                 <Text style={s.label}>Transporte</Text>
@@ -98,10 +98,10 @@ export const SipLoginScreen: React.FC = () => {
                 </View>
 
                 <TouchableOpacity
+                    activeOpacity={0.85}
+                    disabled={!canSubmit}
                     onPress={handleRegisterPress}
                     style={[s.button, { opacity: canSubmit ? 1 : 0.5 }]}
-                    disabled={!canSubmit}
-                    activeOpacity={0.85}
                 >
                     <Text style={s.buttonText}>Registrar</Text>
                 </TouchableOpacity>

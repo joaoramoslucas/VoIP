@@ -1,16 +1,22 @@
 import React from 'react';
-import { SafeAreaView, StatusBar, StyleSheet } from 'react-native';
-import { SipDebugScreen } from '../screens/SipDebugScreen';
+import { StatusBar } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { NavigationContainer } from '@react-navigation/native';
+
+import { SipStoreProvider } from '../state/sip/sipStore';
+import { AppNavigator } from './navigation/AppNavigator';
 
 export function AppRoot() {
-  return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="default" />
-      <SipDebugScreen />
-    </SafeAreaView>
-  );
-}
+    return (
+        <SafeAreaProvider>
+            <StatusBar barStyle="dark-content" />
 
-const styles = StyleSheet.create({
-  container: { flex: 1 },
-});
+            <SipStoreProvider>
+                <NavigationContainer>
+                    <AppNavigator />
+                </NavigationContainer>
+            </SipStoreProvider>
+
+        </SafeAreaProvider>
+    );
+}

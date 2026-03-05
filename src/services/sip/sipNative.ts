@@ -1,18 +1,20 @@
-import { NativeModules } from 'react-native';
-import type { SipAccountCredentials } from './sipTypes';
+import { NativeModules } from 'react-native'
+import type { SipAccountCredentials } from './sipTypes'
 
 type SipNativeModuleType = {
-  initialize(options: Record<string, any>): Promise<boolean>;
-  register(params: SipAccountCredentials): Promise<boolean>;
-  unregister(): Promise<boolean>;
-  startCall(params: { to: string }): Promise<boolean>;
-  hangUp(): Promise<boolean>; // implementar no nativo depois
-  acceptCall(): Promise<boolean>; // idem
-  declineCall(): Promise<boolean>; // idem
-  toggleMute(params: { isMuted: boolean }): Promise<boolean>; // idem
-  toggleSpeaker(params: { isSpeakerEnabled: boolean }): Promise<boolean>; // idem
-};
+  initialize(options: Record<string, any>): Promise<boolean>
+  register(params: SipAccountCredentials): Promise<boolean>
+  unregister(): Promise<boolean>
 
-const { SipNativeModule } = NativeModules;
+  startCall(params: { to: string }): Promise<boolean>
 
-export const sipNative: SipNativeModuleType = SipNativeModule as SipNativeModuleType;
+  hangup(): Promise<boolean>
+
+  setMute(params: { muted: boolean }): Promise<boolean>
+  setSpeaker(params: { speakerOn: boolean }): Promise<boolean>
+}
+
+const { SipNativeModule } = NativeModules
+
+export const sipNative: SipNativeModuleType =
+  SipNativeModule as SipNativeModuleType
