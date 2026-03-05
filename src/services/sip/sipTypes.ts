@@ -35,3 +35,19 @@ export type SipCallSnapshot = {
     state: SipCallMappedState;
     direction: 'Incoming' | 'Outgoing' | null;
 };
+
+export type SipCallStateChangedPayload = {
+  state: SipCallMappedState;
+  message?: string;
+};
+
+export type SipIncomingCallPayload = {
+  from: string;
+};
+
+export type SipCallEventPayload = SipCallStateChangedPayload;
+
+export type SipRegistrationEventPayload = {
+  state: SipRegistrationMappedState;
+  message?: string;
+};

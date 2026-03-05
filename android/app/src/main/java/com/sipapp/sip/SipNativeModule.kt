@@ -596,68 +596,104 @@ class SipNativeModule(private val reactContext: ReactApplicationContext) :
     }
 
     @ReactMethod
-    fun hangup(promise: Promise) {
-        Log.i(logTag, "hangup() called")
+    fun setMute(params: ReadableMap, promise: Promise) {
+        Log.i(logTag, "setMute() params=$params")
+
+        val core = linphoneCore
+        if (core == null) {
+            promise.reject("NO_CORE", "Core not initialized")
+            return
+        }
+
+        val muted = params.hasKey("muted") && params.getBoolean("muted")
+
         try {
-            ensureCoreInitializedOrThrow()
-
-            val core = linphoneCore!!
-            core.currentCall?.terminate()
+            core.isMicEnabled = !muted
             promise.resolve(true)
-
-        } catch (exception: Exception) {
-            Log.e(logTag, "hangup() error: ${exception.message}", exception)
-            promise.reject("HANGUP_ERROR", exception.message, exception)
+        } catch (t: Throwable) {
+            promise.reject("MUTE_ERROR", t.message, t)
         }
     }
 
     @ReactMethod
-    fun setMute(params: ReadableMap, promise: Promise) {
-        val muted = params.getBoolean("muted")
-        Log.i(logTag, "setMute() called muted=$muted")
-        
-        try {
-            ensureCoreInitializedOrThrow()
+    fun addListener(eventName: String) {
+        // Obrigatório pro NativeEventEmitter (especialmente no new architecture)
+        Log.i(logTag, "addListener(eventName=$eventName)")
+    }
 
-            // val muted = params.getBoolean("muted")
-            val core = linphoneCore!!
-
-            core.isMicEnabled = !muted
-            promise.resolve(true)
-
-        } catch (exception: Exception) {
-            promise.reject("MUTE_ERROR", exception.message, exception)
-        }
+    @ReactMethod
+    fun removeListeners(count: Int) {
+        // Obrigatório pro NativeEventEmitter (especialmente no new architecture)
+        Log.i(logTag, "removeListeners(count=$count)")
+    }
+    
+    override fun getConstants(): MutableMap<String, Any> {
+        return mutableMapOf(
+            "SUPPORTED_EVENTS" to listOf("onCallState", "onIncomingCall", "onRegistrationState")
+        )
     }
 
     @ReactMethod
     fun setSpeaker(params: ReadableMap, promise: Promise) {
-        val speakerOn = params.getBoolean("speakerOn")
-        Log.i(logTag, "setSpeaker() called speakerOn=$speakerOn")
+        Log.i(logTag, "setSpeaker() params=$params")
+
+        val core = linphoneCore
+        if (core == null) {
+            promise.reject("NO_CORE", "Core not initialized")
+            return
+        }
+
+        val speakerOn = params.hasKey("speakerOn") && params.getBoolean("speakerOn")
 
         try {
-            ensureCoreInitializedOrThrow()
-
-            // val speakerOn = params.getBoolean("speakerOn")
-            val core = linphoneCore!!
-
-            // Saída de áudio: o Linphone gerencia via AudioDevice
             val devices = core.audioDevices
             val target = devices.firstOrNull { device ->
-                if (speakerOn) device.type == AudioDevice.Type.Speaker else device.type == AudioDevice.Type.Earpiece
+                val typeAsText = device.type.toString()
+
+                if (speakerOn) {
+                    typeAsText.contains("Speaker", ignoreCase = true)
+                } else {
+                    typeAsText.contains("Earpiece", ignoreCase = true) ||
+                    typeAsText.contains("Headphones", ignoreCase = true)
+                }
             }
 
             if (target != null) {
-                core.currentCall?.outputAudioDevice = target
+                core.outputAudioDevice = target
+            } else {
+                Log.w(logTag, "setSpeaker(): não achei device compatível (speakerOn=$speakerOn)")
             }
 
             promise.resolve(true)
-
-        } catch (exception: Exception) {
-            promise.reject("SPEAKER_ERROR", exception.message, exception)
+        } catch (t: Throwable) {
+            promise.reject("SPEAKER_ERROR", t.message, t)
         }
     }
 
+    @ReactMethod
+    fun hangup(promise: Promise) {
+        Log.i(logTag, "hangup()")
+
+        val core = linphoneCore
+        if (core == null) {
+            promise.reject("NO_CORE", "Core not initialized")
+            return
+        }
+
+        try {
+            val currentCall = core.currentCall
+            if (currentCall != null) {
+                currentCall.terminate()
+            } else {
+                Log.w(logTag, "hangup(): não tem call ativa")
+            }
+
+            promise.resolve(true)
+        } catch (t: Throwable) {
+            promise.reject("HANGUP_ERROR", t.message, t)
+        }
+    }
+    
     override fun invalidate() {
         // Chamado quando o RN descarta o módulo
         try {
