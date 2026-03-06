@@ -37,17 +37,17 @@ export type SipCallSnapshot = {
 };
 
 export type SipCallStateChangedPayload = {
-  state: SipCallMappedState;
-  message?: string;
+    message?: string;
+    state: SipCallMappedState;
 };
 
 export type SipIncomingCallPayload = {
-  from: string;
+    from: string;
 };
 
 export type SipCallEventPayload = SipCallStateChangedPayload;
 
 export type SipRegistrationEventPayload = {
-  state: SipRegistrationMappedState;
-  message?: string;
+    message?: string;
+    state: SipRegistrationMappedState;
 };

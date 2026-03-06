@@ -1,11 +1,12 @@
+import { s as s } from './s';
+
 import React, { useMemo, useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native';
 
-import { RootStackParams } from '../../app/RootStackParams';
-import { s as s } from './s';
 import { useSipStore } from '../../state/sip/sipStore';
+import { RootStackParams } from '../../app/RootStackParams';
 import type { SipTransport } from '../../services/sip/sipTypes';
 
 type Navigation = NativeStackNavigationProp<RootStackParams, 'SipLogin'>;

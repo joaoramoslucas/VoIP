@@ -1,8 +1,9 @@
-import React, { useMemo, useState } from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-
 import { s as s } from './s';
+
+import React, { useMemo, useState } from 'react';
+import { useNavigation } from '@react-navigation/native';
+import { View, Text, TouchableOpacity } from 'react-native';
+
 import { useSipStore } from '../../state/sip/sipStore';
 import { getIsIncomingCall, getIsInCall } from '../../services/sip/sipSelectors';
 
@@ -78,10 +79,10 @@ export const CallScreen: React.FC = () => {
                         </View>
 
                         <TouchableOpacity
-                            onPress={handleHangUp}
-                            style={[s.endButton, { opacity: isInCall ? 1 : 0.6 }]}
                             activeOpacity={0.85}
                             disabled={!isInCall}
+                            onPress={handleHangUp}
+                            style={[s.endButton, { opacity: isInCall ? 1 : 0.6 }]}
                         >
                             <Text style={s.controlText}>Desligar</Text>
                         </TouchableOpacity>

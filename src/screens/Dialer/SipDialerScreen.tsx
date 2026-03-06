@@ -1,11 +1,12 @@
+import { s as s } from './s';
+
 import React, { useMemo, useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { View, Text, TextInput, TouchableOpacity } from 'react-native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
-import { RootStackParams } from '../../app/RootStackParams';
-import { s as s } from './s';
 import { useSipStore } from '../../state/sip/sipStore';
+import { RootStackParams } from '../../app/RootStackParams';
 import { getIsRegistered } from '../../services/sip/sipSelectors';
 
 type Navigation = NativeStackNavigationProp<RootStackParams, 'Dialer'>;
@@ -36,20 +37,20 @@ export const DialerScreen: React.FC = () => {
 
             <View style={s.card}>
                 <TextInput
+                    style={s.input}
+                    autoCapitalize="none"
                     value={destinationInput}
+                    placeholderTextColor="#66739A"
                     onChangeText={setDestinationInput}
                     placeholder="ex: 1002 ou sip:1002@dominio.com"
-                    placeholderTextColor="#66739A"
-                    autoCapitalize="none"
-                    style={s.input}
                 />
 
                 <View style={s.row}>
                     <TouchableOpacity
+                        disabled={!canCall}
+                        activeOpacity={0.85}
                         onPress={handleCallPress}
                         style={[s.buttonPrimary, { opacity: canCall ? 1 : 0.5 }]}
-                        activeOpacity={0.85}
-                        disabled={!canCall}
                     >
                         <Text style={s.buttonText}>Ligar</Text>
                     </TouchableOpacity>

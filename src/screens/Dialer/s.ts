@@ -4,27 +4,27 @@ import { spacing } from '../../theme/spacing';
 
 export const s = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background, padding: spacing.xl },
-  title: { color: colors.textPrimary, fontSize: 22, fontWeight: '800', marginTop: spacing.xl },
   subtitle: { color: colors.textSecondary, marginTop: spacing.xs, marginBottom: spacing.xl },
+  title: { color: colors.textPrimary, fontSize: 22, fontWeight: '800', marginTop: spacing.xl },
 
   card: {
-    backgroundColor: colors.card,
+    borderWidth: 1,
     borderRadius: 16,
     padding: spacing.lg,
-    borderWidth: 1,
     borderColor: colors.border,
+    backgroundColor: colors.card,
   },
 
   input: {
     height: 54,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: colors.border,
-    paddingHorizontal: spacing.md,
-    color: colors.textPrimary,
-    backgroundColor: '#0E141D',
     fontSize: 16,
+    borderWidth: 1,
+    borderRadius: 14,
     fontWeight: '700',
+    color: colors.textPrimary,
+    borderColor: colors.border,
+    backgroundColor: '#0E141D',
+    paddingHorizontal: spacing.md,
   },
 
   row: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.lg },
@@ -40,12 +40,12 @@ export const s = StyleSheet.create({
   buttonSecondary: {
     width: 120,
     height: 50,
+    borderWidth: 1,
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#1A2536',
-    borderWidth: 1,
     borderColor: colors.border,
+    backgroundColor: '#1A2536',
   },
 
   buttonText: { color: colors.textPrimary, fontWeight: '900' },
