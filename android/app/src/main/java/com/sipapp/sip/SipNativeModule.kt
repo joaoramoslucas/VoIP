@@ -1,11 +1,11 @@
 package com.sipapp.sip
 
-import android.os.Handler
-import android.os.Looper
 import android.util.Log
+import android.os.Looper
+import android.os.Handler
+import org.linphone.core.*
 import com.facebook.react.bridge.*
 import com.facebook.react.modules.core.DeviceEventManagerModule
-import org.linphone.core.*
 
 class SipNativeModule(private val reactContext: ReactApplicationContext) :
     ReactContextBaseJavaModule(reactContext) {
