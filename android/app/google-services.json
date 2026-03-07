@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "65591556732",
+    "project_id": "comsipapp-84be2",
+    "storage_bucket": "comsipapp-84be2.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:65591556732:android:fec780ac05defc0182e7f9",
+        "android_client_info": {
+          "package_name": "com.sipapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCQv0-bIBxMR9M-8IrHyAjW52a5lXIA-OU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

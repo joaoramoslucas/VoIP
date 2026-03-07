@@ -1,9 +1,10 @@
 import { s } from './s';
 
-import { sipClient } from '../voip/SipClient';
 import React, { useEffect, useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView } from 'react-native';
-import { PermissionsAndroid, Platform } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, PermissionsAndroid, Platform } from 'react-native';
+
+import { sipNative } from '../services/sip/sipNative';
+import { sipEvents } from '../services/sip/sipEvents';
 
 export function SipDebugScreen() {
   const [sipDomain, setSipDomain] = useState('sip.seudominio.com');
@@ -15,7 +16,7 @@ export function SipDebugScreen() {
   const [logs, setLogs] = useState<string[]>([]);
   const pushLog = (line: string) => setLogs(prev => [`${new Date().toLocaleTimeString()} - ${line}`, ...prev]);
 
-    const ensureMicPermission = async (): Promise<boolean> => {
+  const ensureMicPermission = async (): Promise<boolean> => {
     if (Platform.OS !== 'android') return true;
 
     const result = await PermissionsAndroid.request(
@@ -38,16 +39,16 @@ export function SipDebugScreen() {
 
     (async () => {
       try {
-        await sipClient.initialize();
+        await sipNative.initialize();
         if (mounted) pushLog('initialize() OK');
       } catch (e: any) {
         if (mounted) pushLog(`initialize() ERROR: ${e?.message ?? String(e)}`);
       }
     })();
 
-    const subReg = sipClient.on('onRegistrationState', p => pushLog(`REG: ${p.state} ${p.message ?? ''}`));
-    const subCall = sipClient.on('onCallState', p => pushLog(`CALL: ${p.state} ${p.message ?? ''}`));
-    const subIncoming = sipClient.on('onIncomingCall', p => pushLog(`INCOMING FROM: ${p.from}`));
+    const subReg = sipEvents.onRegistrationStateChanged(p => pushLog(`REG: ${p.state} ${p.message ?? ''}`));
+    const subCall = sipEvents.onCallStateChanged(p => pushLog(`CALL: ${p.state} ${p.message ?? ''}`));
+    const subIncoming = sipEvents.onIncomingCall(p => pushLog(`INCOMING FROM: ${p.from}`));
 
     return () => {
       mounted = false;
@@ -100,10 +101,10 @@ export function SipDebugScreen() {
             style={s.button}
             onPress={async () => {
               const hasMicPermission = await ensureMicPermission();
-                if (!hasMicPermission) return;
+              if (!hasMicPermission) return;
 
-                pushLog(`register()... transport=${transport}`);
-                await sipClient.register({ sipDomain, username, password, transport });
+              pushLog(`register()... transport=${transport}`);
+              await sipNative.register({ sipDomain, username, password, transport });
             }}
           >
             <Text style={s.buttonText}>Registrar</Text>
@@ -113,7 +114,7 @@ export function SipDebugScreen() {
             style={[s.button, s.secondary]}
             onPress={async () => {
               pushLog('unregister()...');
-              await sipClient.unregister();
+              await sipNative.unregister();
             }}
           >
             <Text style={s.buttonText}>Desregistrar</Text>
@@ -130,10 +131,10 @@ export function SipDebugScreen() {
             style={s.button}
             onPress={async () => {
               const hasMicPermission = await ensureMicPermission();
-                if (!hasMicPermission) return;
+              if (!hasMicPermission) return;
 
-                pushLog(`startCall(${callTo})...`);
-                await sipClient.startCall({ to: callTo });
+              pushLog(`startCall(${callTo})...`);
+              await sipNative.startCall({ to: callTo });
             }}
           >
             <Text style={s.buttonText}>Ligar</Text>
@@ -143,7 +144,7 @@ export function SipDebugScreen() {
             style={[s.button, s.danger]}
             onPress={async () => {
               pushLog('hangup()...');
-              await sipClient.hangup();
+              await sipNative.hangup();
             }}
           >
             <Text style={s.buttonText}>Desligar</Text>

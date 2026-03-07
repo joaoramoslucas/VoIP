@@ -1,11 +1,12 @@
 package com.sipapp.sip
 
-import android.os.Handler
-import android.os.Looper
 import android.util.Log
-import com.facebook.react.bridge.*
-import com.facebook.react.modules.core.DeviceEventManagerModule
+import android.os.Looper
+import android.os.Handler
 import org.linphone.core.*
+import com.facebook.react.bridge.*
+import com.google.firebase.messaging.FirebaseMessaging
+import com.facebook.react.modules.core.DeviceEventManagerModule
 
 class SipNativeModule(private val reactContext: ReactApplicationContext) :
     ReactContextBaseJavaModule(reactContext) {
@@ -94,10 +95,12 @@ class SipNativeModule(private val reactContext: ReactApplicationContext) :
         emitEventToReactNative("onRegistrationState", payload)
     }
 
-    private fun emitCallState(state: String, message: String? = null) {
+    private fun emitCallState(state: String, message: String? = null, remoteUri: String? = null, direction: String? = null) {
         val payload = Arguments.createMap().apply {
             putString("state", state)
             if (message != null) putString("message", message)
+            if (remoteUri != null) putString("remoteUri", remoteUri)
+            if (direction != null) putString("direction", direction)
         }
         emitEventToReactNative("onCallState", payload)
     }
@@ -252,6 +255,7 @@ class SipNativeModule(private val reactContext: ReactApplicationContext) :
 
             val core = linphoneFactory.createCore(null, null, reactContext)
             linphoneCore = core
+            SipCallManager.core = core
 
             // ==============================
             // NAT / STUN / ICE
@@ -312,6 +316,21 @@ class SipNativeModule(private val reactContext: ReactApplicationContext) :
             }
 
             // ==============================
+            // PUSH NOTIFICATIONS (Firebase)
+            // ==============================
+
+            try {
+                val savedToken = PushTokenManager.getToken(reactContext)
+                if (savedToken != null) {
+                    configurePushOnCore(core, savedToken)
+                } else {
+                    Log.i(logTag, "Push: nenhum token FCM salvo ainda")
+                }
+            } catch (t: Throwable) {
+                Log.w(logTag, "Push config skipped: ${t.message}")
+            }
+
+            // ==============================
             // LISTENER
             // ==============================
 
@@ -331,6 +350,21 @@ class SipNativeModule(private val reactContext: ReactApplicationContext) :
                     )
 
                     emitRegistrationState(mapped, message)
+
+                    // Iniciar/parar keep-alive baseado no estado de registro
+                    if (state == RegistrationState.Ok) {
+                        try {
+                            CallForegroundService.startKeepAlive(reactContext)
+                        } catch (t: Throwable) {
+                            Log.w(logTag, "Falha ao iniciar keepalive: ${t.message}")
+                        }
+                    } else if (state == RegistrationState.Cleared || state == RegistrationState.Failed) {
+                        try {
+                            CallForegroundService.stopKeepAlive(reactContext)
+                        } catch (t: Throwable) {
+                            Log.w(logTag, "Falha ao parar keepalive: ${t.message}")
+                        }
+                    }
                 }
 
                 override fun onCallStateChanged(
@@ -361,15 +395,122 @@ class SipNativeModule(private val reactContext: ReactApplicationContext) :
 
                     if (state == Call.State.IncomingReceived) {
                         emitIncomingCall(remote ?: "unknown")
+
+                        // Only show full-screen call notification when app is NOT in foreground.
+                        // When app IS in foreground, the JS in-app UI handles it normally.
+                        val appInForeground = AppForegroundTracker.isForeground
+                        if (!appInForeground) {
+                            // Start foreground service with full-screen heads-up notification
+                            try {
+                                CallForegroundService.start(reactContext, remote, isIncoming = true)
+                            } catch (t: Throwable) {
+                                Log.w(logTag, "Falha ao iniciar foreground service: ${t.message}")
+                            }
+                            // Bring app to foreground
+                            try {
+                                val launchIntent = reactContext.packageManager
+                                    .getLaunchIntentForPackage(reactContext.packageName)?.apply {
+                                        flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK or
+                                                android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                                                android.content.Intent.FLAG_ACTIVITY_SINGLE_TOP
+                                        putExtra("incoming_call", true)
+                                        putExtra("caller", remote ?: "unknown")
+                                    }
+                                if (launchIntent != null) {
+                                    reactContext.startActivity(launchIntent)
+                                    Log.i(logTag, "App trazido para frente via incoming call")
+                                }
+                            } catch (t: Throwable) {
+                                Log.w(logTag, "Falha ao trazer app para frente: ${t.message}")
+                            }
+                        } else {
+                            Log.i(logTag, "App em foreground — in-app UI cuida da chamada (sem notificação interrupt)")
+                            // Still need a foreground service for audio management
+                            try { CallForegroundService.startKeepAlive(reactContext) } catch (_: Throwable) {}
+                        }
                     }
 
-                    emitCallState(mapped, message)
+                    // Iniciar service para chamada saindo
+                    if (state == Call.State.OutgoingInit || state == Call.State.OutgoingProgress) {
+                        try {
+                            CallForegroundService.start(reactContext, remote, isIncoming = false)
+                        } catch (t: Throwable) {
+                            Log.w(logTag, "Falha ao iniciar foreground service: ${t.message}")
+                        }
+                    }
+
+                    // Quando chamada conecta, atualizar notificação para "Em chamada"
+                    if (state == Call.State.Connected || state == Call.State.StreamsRunning) {
+                        try {
+                            CallForegroundService.start(reactContext, remote, isIncoming = false)
+                        } catch (t: Throwable) {
+                            Log.w(logTag, "Falha ao atualizar notificação: ${t.message}")
+                        }
+                    }
+
+                    // Parar service quando chamada termina
+                    if (state == Call.State.End || state == Call.State.Released || state == Call.State.Error) {
+                        try {
+                            CallForegroundService.stop(reactContext)
+                        } catch (t: Throwable) {
+                            Log.w(logTag, "Falha ao parar foreground service: ${t.message}")
+                        }
+                    }
+
+                    // Determine direction string for JS
+                    val directionStr = when (call.dir) {
+                        Call.Dir.Incoming -> "Incoming"
+                        Call.Dir.Outgoing -> "Outgoing"
+                        else -> null
+                    }
+
+                    emitCallState(mapped, message, remote, directionStr)
                 }
             }
 
             core.addListener(coreListener)
 
             core.start()
+
+            // After start, check for any existing active call (e.g. app was killed and
+            // user accepted via notification — call is already connected when JS restarts).
+            Handler(Looper.getMainLooper()).postDelayed({
+                try {
+                    val activeCalls = core.calls
+                    if (activeCalls.isNotEmpty()) {
+                        val activeCall = activeCalls.first()
+                        val mappedState = mapCallState(activeCall.state)
+                        val remoteUri = try { activeCall.remoteAddress?.asStringUriOnly() } catch (_: Throwable) { null }
+                        Log.i(logTag, "Active call found after core.start(): state=$mappedState remote=$remoteUri")
+
+                        // Emit the call state so JS (IncomingCallNavigator) can react
+                        val payload = Arguments.createMap().apply {
+                            putString("state", mappedState)
+                            putString("message", "Restored from background")
+                            if (remoteUri != null) putString("remoteUri", remoteUri)
+                        }
+                        emitEventToReactNative("onCallState", payload)
+
+                        if (activeCall.state == Call.State.IncomingReceived) {
+                            emitIncomingCall(remoteUri ?: "unknown")
+                        }
+                    }
+                } catch (t: Throwable) {
+                    Log.w(logTag, "Check active calls after start failed: ${t.message}")
+                }
+            }, 500) // small delay so JS bridge is ready
+
+            try {
+                FirebaseMessaging.getInstance().token.addOnSuccessListener { token ->
+                    Log.i(logTag, "FCM token obtido: ${token.take(20)}...")
+                    PushTokenManager.saveToken(reactContext, token)
+                    configurePushOnCore(core, token)
+                }.addOnFailureListener { e ->
+                    Log.w(logTag, "Falha ao obter FCM token: ${e.message}")
+                }
+            } catch (t: Throwable) {
+                Log.w(logTag, "Firebase não disponível: ${t.message}")
+            }
 
             startIterateLoopIfNeeded()
 
@@ -383,6 +524,99 @@ class SipNativeModule(private val reactContext: ReactApplicationContext) :
 
             promise.reject("INIT_ERROR", exception.message, exception)
         }
+    }
+
+    /**
+     * Configura push notification no Core Linphone.
+     * Usa reflection para ser compatível com diferentes versões do SDK.
+     */
+    private fun configurePushOnCore(core: Core, token: String) {
+        try {
+            // Habilitar push no Core
+            try { core.isPushNotificationEnabled = true } catch (_: Throwable) {}
+
+            val pushProvider = "firebase"
+            val pushPrid = token
+            val pushParam = "com.sipapp"
+
+            // Tentar configurar via AccountParams (API mais nova)
+            core.defaultAccount?.let { account ->
+                try {
+                    val params = account.params.clone()
+
+                    // pushNotificationAllowed
+                    trySetBoolean(params, "setPushNotificationAllowed", true)
+                    trySetBoolean(params, "setRemotePushNotificationAllowed", true)
+
+                    // PushNotificationConfig
+                    val configGetter = params.javaClass.methods.firstOrNull {
+                        it.name == "getPushNotificationConfig" && it.parameterTypes.isEmpty()
+                    }
+                    val config = configGetter?.invoke(params)
+                    if (config != null) {
+                        trySetString(config, "setProvider", pushProvider)
+                        trySetString(config, "setPrid", pushPrid)
+                        trySetString(config, "setParam", pushParam)
+                    }
+
+                    account.params = params
+                    Log.i(logTag, "Push configurado via AccountParams")
+                } catch (t: Throwable) {
+                    Log.w(logTag, "Push AccountParams falhou: ${t.message}")
+                }
+            }
+
+            // Fallback: configurar via ProxyConfig (API mais antiga)
+            if (core.defaultAccount == null) {
+                core.proxyConfigList.forEach { proxy ->
+                    trySetBoolean(proxy, "setPushNotificationAllowed", true)
+                }
+            }
+
+            Log.i(logTag, "Push configurado: provider=$pushProvider prid=${token.take(20)}... param=$pushParam")
+        } catch (t: Throwable) {
+            Log.w(logTag, "configurePushOnCore falhou: ${t.message}", t)
+        }
+    }
+
+    private fun trySetBoolean(obj: Any, methodName: String, value: Boolean) {
+        try {
+            val m = obj.javaClass.methods.firstOrNull { it.name == methodName && it.parameterTypes.size == 1 }
+            m?.invoke(obj, value)
+        } catch (_: Throwable) {}
+    }
+
+    private fun trySetString(obj: Any, methodName: String, value: String) {
+        try {
+            val m = obj.javaClass.methods.firstOrNull { it.name == methodName && it.parameterTypes.size == 1 }
+            m?.invoke(obj, value)
+        } catch (_: Throwable) {}
+    }
+
+    @ReactMethod
+    fun setPushToken(params: ReadableMap, promise: Promise) {
+        val token = params.getString("token") ?: ""
+        if (token.isEmpty()) {
+            promise.reject("INVALID_TOKEN", "Token vazio")
+            return
+        }
+
+        Log.i(logTag, "setPushToken(): ${token.take(20)}...")
+        PushTokenManager.saveToken(reactContext, token)
+
+        // Se o core já estiver inicializado, configurar imediatamente
+        val core = linphoneCore
+        if (core != null) {
+            configurePushOnCore(core, token)
+        }
+
+        promise.resolve(true)
+    }
+
+    @ReactMethod
+    fun getPushToken(promise: Promise) {
+        val token = PushTokenManager.getToken(reactContext)
+        promise.resolve(token)
     }
 
     @ReactMethod
@@ -681,12 +915,35 @@ class SipNativeModule(private val reactContext: ReactApplicationContext) :
         }
 
         try {
+            // Tentar currentCall primeiro
             val currentCall = core.currentCall
             if (currentCall != null) {
+                Log.i(logTag, "hangup(): terminando currentCall")
                 currentCall.terminate()
-            } else {
-                Log.w(logTag, "hangup(): não tem call ativa")
+                promise.resolve(true)
+                return
             }
+
+            // Fallback: terminar TODAS as calls (cobre estados como outgoing-ringing)
+            val allCalls = core.calls
+            if (allCalls.isNotEmpty()) {
+                Log.i(logTag, "hangup(): currentCall null, terminando ${allCalls.size} call(s)")
+                allCalls.forEach { call ->
+                    try {
+                        call.terminate()
+                    } catch (t: Throwable) {
+                        Log.w(logTag, "hangup(): falha ao terminar call: ${t.message}")
+                    }
+                }
+                promise.resolve(true)
+                return
+            }
+
+            // Último recurso: terminateAllCalls
+            Log.w(logTag, "hangup(): nenhuma call encontrada, tentando terminateAllCalls()")
+            try {
+                core.terminateAllCalls()
+            } catch (_: Throwable) {}
 
             promise.resolve(true)
         } catch (t: Throwable) {
@@ -694,6 +951,95 @@ class SipNativeModule(private val reactContext: ReactApplicationContext) :
         }
     }
     
+    /**
+     * Encontra uma call ativa no core, tentando currentCall primeiro,
+     * depois procurando em core.calls pelos estados fornecidos.
+     */
+    private fun findCall(vararg targetStates: Call.State): Call? {
+        val core = linphoneCore ?: return null
+
+        // 1. Tentar currentCall
+        val current = core.currentCall
+        if (current != null) return current
+
+        // 2. Buscar por estado específico em todas as calls
+        val allCalls = core.calls
+        if (targetStates.isNotEmpty()) {
+            val matchByState = allCalls.firstOrNull { it.state in targetStates }
+            if (matchByState != null) return matchByState
+        }
+
+        // 3. Retornar qualquer call existente
+        return allCalls.firstOrNull()
+    }
+
+    @ReactMethod
+    fun acceptCall(promise: Promise) {
+        Log.i(logTag, "acceptCall()")
+
+        val core = linphoneCore
+        if (core == null) {
+            promise.reject("NO_CORE", "Core not initialized")
+            return
+        }
+
+        try {
+            val call = findCall(
+                Call.State.IncomingReceived,
+                Call.State.IncomingEarlyMedia
+            )
+
+            if (call == null) {
+                Log.e(logTag, "acceptCall(): nenhuma chamada encontrada. calls=${core.calls.size}")
+                core.calls.forEachIndexed { i, c ->
+                    Log.e(logTag, "  call[$i] state=${c.state} remote=${try { c.remoteAddress?.asStringUriOnly() } catch (_: Throwable) { "?" }}")
+                }
+                promise.reject("NO_CALL", "Nenhuma chamada para aceitar")
+                return
+            }
+
+            Log.i(logTag, "acceptCall(): encontrada call state=${call.state}")
+            val params = core.createCallParams(call)
+            params?.isVideoEnabled = false
+            call.acceptWithParams(params)
+            promise.resolve(true)
+        } catch (t: Throwable) {
+            Log.e(logTag, "acceptCall() error: ${t.message}", t)
+            promise.reject("ACCEPT_ERROR", t.message, t)
+        }
+    }
+
+    @ReactMethod
+    fun declineCall(promise: Promise) {
+        Log.i(logTag, "declineCall()")
+
+        val core = linphoneCore
+        if (core == null) {
+            promise.reject("NO_CORE", "Core not initialized")
+            return
+        }
+
+        try {
+            val call = findCall(
+                Call.State.IncomingReceived,
+                Call.State.IncomingEarlyMedia
+            )
+
+            if (call == null) {
+                Log.e(logTag, "declineCall(): nenhuma chamada encontrada. calls=${core.calls.size}")
+                promise.reject("NO_CALL", "Nenhuma chamada para recusar")
+                return
+            }
+
+            Log.i(logTag, "declineCall(): recusando call state=${call.state}")
+            call.decline(Reason.Declined)
+            promise.resolve(true)
+        } catch (t: Throwable) {
+            Log.e(logTag, "declineCall() error: ${t.message}", t)
+            promise.reject("DECLINE_ERROR", t.message, t)
+        }
+    }
+
     override fun invalidate() {
         // Chamado quando o RN descarta o módulo
         try {

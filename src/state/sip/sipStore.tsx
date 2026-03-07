@@ -9,29 +9,34 @@ import React, {
 } from 'react';
 
 import type {
-  SipAccountCredentials,
   SipCallSnapshot,
+  SipAccountCredentials,
   SipRegistrationSnapshot,
 } from '../../services/sip/sipTypes';
 
 import { sipNative } from '../../services/sip/sipNative';
 import { sipEvents } from '../../services/sip/sipEvents';
+import { credentialStorage } from '../../services/storage/credentialStorage';
+import { callHistory } from '../../screens/History/HistoryScreen';
 
 type SipStoreState = {
+  call: SipCallSnapshot;
   isCoreInitialized: boolean;
+  registration: SipRegistrationSnapshot;
   lastUsedCredentials: SipAccountCredentials | null;
 
-  registration: SipRegistrationSnapshot;
-  call: SipCallSnapshot;
-
   actions: {
+    logout: () => Promise<void>;
+    hangUp: () => Promise<void>;
+    acceptCall: () => Promise<void>;
+    declineCall: () => Promise<void>;
+    autoLogin: () => Promise<boolean>;
     initializeCore: () => Promise<void>;
-    registerAccount: (credentials: SipAccountCredentials) => Promise<void>;
     unregisterAccount: () => Promise<void>;
     startCall: (to: string) => Promise<void>;
-    hangUp: () => Promise<void>;
     setMuted: (isMuted: boolean) => Promise<void>;
     setSpeakerEnabled: (isSpeakerEnabled: boolean) => Promise<void>;
+    registerAccount: (credentials: SipAccountCredentials) => Promise<void>;
   };
 };
 
@@ -58,6 +63,7 @@ export const SipStoreProvider: React.FC<React.PropsWithChildren> = ({ children }
   });
 
   const subscribedRef = useRef(false);
+  const callStartRef = useRef<{ time: number; uri: string; direction: 'incoming' | 'outgoing' } | null>(null);
 
   useEffect(() => {
     if (subscribedRef.current) return;
@@ -78,8 +84,45 @@ export const SipStoreProvider: React.FC<React.PropsWithChildren> = ({ children }
           ...previous,
           state: payload.state,
           message: payload.message ?? '',
+          // Use remoteUri from payload if provided (dead-app restore), else keep previous
+          remoteUri: payload.remoteUri !== undefined ? payload.remoteUri : previous.remoteUri,
+          // Use direction from payload if provided, else keep previous
+          direction: payload.direction ?? previous.direction,
           lastUpdatedAtMs: nowMs(),
         };
+
+        // Track call start
+        if (payload.state === 'connected') {
+          callStartRef.current = {
+            time: Date.now(),
+            uri: previous.remoteUri ?? '',
+            direction: previous.direction === 'Incoming' ? 'incoming' : 'outgoing',
+          };
+        }
+
+        // Save to history on call end
+        if ((payload.state === 'ended' || payload.state === 'error') && callStartRef.current) {
+          const { time, uri, direction } = callStartRef.current;
+          const durationSeconds = Math.floor((Date.now() - time) / 1000);
+          callHistory.add({
+            remoteUri: uri || previous.remoteUri || 'unknown',
+            direction,
+            startedAt: time,
+            durationSeconds,
+          });
+          callStartRef.current = null;
+        }
+
+        // Also track missed calls (ended from incoming without connecting)
+        if (payload.state === 'ended' && previous.state === 'incoming' && !callStartRef.current) {
+          callHistory.add({
+            remoteUri: previous.remoteUri || 'unknown',
+            direction: 'missed',
+            startedAt: Date.now(),
+            durationSeconds: 0,
+          });
+        }
+
         return next;
       });
     });
@@ -88,7 +131,7 @@ export const SipStoreProvider: React.FC<React.PropsWithChildren> = ({ children }
       const next: SipCallSnapshot = {
         state: 'incoming',
         message: 'Incoming call',
-        remoteUri: payload.from ?? null, // ✅ é "from" no Kotlin
+        remoteUri: payload.from ?? null,
         direction: 'Incoming',
         lastUpdatedAtMs: nowMs(),
       };
@@ -119,6 +162,34 @@ export const SipStoreProvider: React.FC<React.PropsWithChildren> = ({ children }
       password: credentials.password,
       transport: credentials.transport,
     });
+
+    // Salvar credenciais para auto-login
+    await credentialStorage.save(credentials);
+  };
+
+  const autoLogin = async (): Promise<boolean> => {
+    const saved = await credentialStorage.load();
+    if (!saved) return false;
+
+    try {
+      await initializeCore();
+      setLastUsedCredentials(saved);
+      await sipNative.register({
+        sipDomain: saved.sipDomain,
+        username: saved.username,
+        password: saved.password,
+        transport: saved.transport,
+      });
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  const logout = async () => {
+    await credentialStorage.clear();
+    await unregisterAccount();
+    setLastUsedCredentials(null);
   };
 
   const unregisterAccount = async () => {
@@ -143,18 +214,10 @@ export const SipStoreProvider: React.FC<React.PropsWithChildren> = ({ children }
 
   const hangUp = async () => {
     await initializeCore();
-    try {
-      await sipNative.hangup(); // ✅ nome real do Kotlin
-    } finally {
-      const next: SipCallSnapshot = {
-        state: 'ended',
-        message: 'Call ended',
-        remoteUri: null,
-        direction: null,
-        lastUpdatedAtMs: nowMs(),
-      };
-      setCall(next);
-    }
+    await sipNative.hangup();
+    // NÃO setar estado manualmente aqui.
+    // O listener onCallStateChanged do nativo vai emitir 'ended'
+    // e o sipStore vai atualizar automaticamente.
   };
 
   const setMuted = async (isMuted: boolean) => {
@@ -167,6 +230,27 @@ export const SipStoreProvider: React.FC<React.PropsWithChildren> = ({ children }
     await sipNative.setSpeaker(isSpeakerEnabled); // wrapper já manda { speakerOn }
   };
 
+  const acceptCall = async () => {
+    await initializeCore();
+    await sipNative.acceptCall();
+  };
+
+  const declineCall = async () => {
+    await initializeCore();
+    try {
+      await sipNative.declineCall();
+    } finally {
+      const next: SipCallSnapshot = {
+        state: 'ended',
+        message: 'Call declined',
+        remoteUri: null,
+        direction: null,
+        lastUpdatedAtMs: nowMs(),
+      };
+      setCall(next);
+    }
+  };
+
   const storeValue = useMemo<SipStoreState>(() => {
     return {
       isCoreInitialized,
@@ -177,10 +261,14 @@ export const SipStoreProvider: React.FC<React.PropsWithChildren> = ({ children }
         initializeCore,
         registerAccount,
         unregisterAccount,
+        autoLogin,
+        logout,
         startCall,
         hangUp,
         setMuted,
         setSpeakerEnabled,
+        acceptCall,
+        declineCall,
       },
     };
   }, [isCoreInitialized, lastUsedCredentials, registration, call]);

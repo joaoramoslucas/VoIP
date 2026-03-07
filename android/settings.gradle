@@ -1,6 +1,15 @@
-pluginManagement { includeBuild("../node_modules/@react-native/gradle-plugin") }
-plugins { id("com.facebook.react.settings") }
-extensions.configure(com.facebook.react.ReactSettingsExtension){ ex -> ex.autolinkLibrariesFromCommand() }
+pluginManagement { 
+    includeBuild("../node_modules/@react-native/gradle-plugin") 
+}
+
+plugins { 
+    id("com.facebook.react.settings") 
+}
+
+extensions.configure(com.facebook.react.ReactSettingsExtension){ 
+    ex -> ex.autolinkLibrariesFromCommand() 
+}
+
 rootProject.name = 'SipApp'
 include ':app'
 includeBuild('../node_modules/@react-native/gradle-plugin')
@@ -10,6 +19,13 @@ dependencyResolutionManagement {
   repositories {
     google()
     mavenCentral()
-    maven { url "https://download.linphone.org/maven_repository/" } 
+
+    // LINPHONE
+    maven { url "https://download.linphone.org/maven_repository/" }
+
+    // ASYNC STORAGE (ESSENCIAL)
+    maven {
+      url("$rootDir/../node_modules/@react-native-async-storage/async-storage/android/local_repo")
+    }
   }
 }

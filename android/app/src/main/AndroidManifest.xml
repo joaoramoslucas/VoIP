@@ -1,8 +1,15 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.READ_CONTACTS" />
     <uses-permission android:name="android.permission.RECORD_AUDIO"/>
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS"/>
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
 
     <application
       android:name=".MainApplication"
@@ -25,5 +32,24 @@
             <category android:name="android.intent.category.LAUNCHER" />
         </intent-filter>
       </activity>
+      <service
+          android:name=".sip.CallForegroundService"
+          android:foregroundServiceType="microphone"
+          android:exported="false" />
+      <service
+          android:name=".sip.SipFirebaseMessagingService"
+          android:exported="false">
+          <intent-filter>
+              <action android:name="com.google.firebase.MESSAGING_EVENT" />
+          </intent-filter>
+      </service>
+      <receiver
+          android:name=".sip.CallActionReceiver"
+          android:exported="false">
+          <intent-filter>
+              <action android:name="com.sipapp.ACTION_ACCEPT_CALL" />
+              <action android:name="com.sipapp.ACTION_DECLINE_CALL" />
+          </intent-filter>
+      </receiver>
     </application>
 </manifest>

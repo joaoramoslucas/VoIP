@@ -39,6 +39,8 @@ export type SipCallSnapshot = {
 export type SipCallStateChangedPayload = {
   state: SipCallMappedState;
   message?: string;
+  remoteUri?: string | null;   // present when native restores call state for dead-app
+  direction?: 'Incoming' | 'Outgoing';
 };
 
 export type SipIncomingCallPayload = {

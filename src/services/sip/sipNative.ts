@@ -23,6 +23,10 @@ type SipNativeModuleType = {
   setMute: (params: { muted: boolean }) => Promise<boolean>;
   setSpeaker: (params: { speakerOn: boolean }) => Promise<boolean>;
   hangup: () => Promise<boolean>;
+  acceptCall: () => Promise<boolean>;
+  declineCall: () => Promise<boolean>;
+  setPushToken: (params: { token: string }) => Promise<boolean>;
+  getPushToken: () => Promise<string | null>;
 };
 
 const sipNativeModule = NativeModules.SipNativeModule as SipNativeModuleType | undefined;
@@ -58,4 +62,13 @@ export const sipNative = {
     assertNativeFunction('setSpeaker')({ speakerOn }),
 
   hangup: () => assertNativeFunction('hangup')(),
+
+  acceptCall: () => assertNativeFunction('acceptCall')(),
+
+  declineCall: () => assertNativeFunction('declineCall')(),
+
+  setPushToken: (token: string) =>
+    assertNativeFunction('setPushToken')({ token }),
+
+  getPushToken: () => assertNativeFunction('getPushToken')(),
 };
