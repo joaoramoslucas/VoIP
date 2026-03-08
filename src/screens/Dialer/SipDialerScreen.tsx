@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import {
     View, Text, TextInput, TouchableOpacity,
-    StyleSheet, StatusBar,
+    StyleSheet, StatusBar, KeyboardAvoidingView, Platform, ScrollView,
 } from 'react-native';
 
 import { DrawerPanel } from '../../app/navigation/DrawerPanel';
@@ -44,12 +44,16 @@ export const DialerScreen: React.FC = () => {
     const canCall = dialInput.trim().length > 0 && isRegistered;
 
     return (
-        <View style={styles.screen}>
+        <KeyboardAvoidingView 
+            style={styles.screen} 
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+        >
             <StatusBar barStyle="light-content" backgroundColor="#0B0F14" />
 
             <DrawerPanel visible={drawerOpen} onClose={() => setDrawerOpen(false)} />
 
-            {/* Header */}
+            {/* Header stays fixed */}
             <View style={styles.header}>
                 {/* Left: hamburger */}
                 <TouchableOpacity
@@ -85,7 +89,7 @@ export const DialerScreen: React.FC = () => {
                         </TouchableOpacity>
                     )}
                     <TouchableOpacity
-                        onPress={() => actions.logout()}
+                        onPress={() => actions.unregisterAccount()}
                         style={styles.logoutBtn}
                         activeOpacity={0.8}
                     >
@@ -94,8 +98,12 @@ export const DialerScreen: React.FC = () => {
                 </View>
             </View>
 
-            {/* Main dialer area */}
-            <View style={styles.dialerArea}>
+            {/* Main dialer area becomes scrollable so it shrinks properly */}
+            <ScrollView 
+                contentContainerStyle={styles.dialerArea}
+                keyboardShouldPersistTaps="handled"
+                showsVerticalScrollIndicator={false}
+            >
                 <Text style={styles.fieldLabel}>Ramal ou SIP URI</Text>
 
                 <View style={styles.inputRow}>
@@ -138,8 +146,8 @@ export const DialerScreen: React.FC = () => {
                         </Text>
                     </View>
                 )}
-            </View>
-        </View>
+            </ScrollView>
+        </KeyboardAvoidingView>
     );
 };
 
@@ -212,9 +220,9 @@ const styles = StyleSheet.create({
     logoutText: { color: '#FF4D4D', fontWeight: '700', fontSize: 13 },
 
     dialerArea: {
-        flex: 1,
+        flexGrow: 1,
         paddingHorizontal: 24,
-        paddingTop: 40,
+        paddingTop: 80,
     },
     fieldLabel: {
         fontSize: 12,

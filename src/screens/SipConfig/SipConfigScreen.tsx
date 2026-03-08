@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
     View, Text, TextInput, TouchableOpacity,
-    ScrollView, StatusBar, StyleSheet,
+    ScrollView, StatusBar, StyleSheet, KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -39,7 +39,11 @@ export const SipConfigScreen: React.FC = () => {
     );
 
     return (
-        <View style={styles.screen}>
+        <KeyboardAvoidingView 
+            style={styles.screen} 
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+        >
             <StatusBar barStyle="light-content" backgroundColor="#0B0F14" />
 
             {/* Header */}
@@ -92,7 +96,7 @@ export const SipConfigScreen: React.FC = () => {
                     <Text style={styles.saveBtnText}>{saved ? '✓ Salvo!' : 'Salvar configurações'}</Text>
                 </TouchableOpacity>
             </ScrollView>
-        </View>
+        </KeyboardAvoidingView>
     );
 };
 

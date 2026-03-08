@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     View, Text, FlatList, TouchableOpacity, StyleSheet, StatusBar,
 } from 'react-native';
@@ -14,12 +14,22 @@ export type CallHistoryEntry = {
 
 // Simple in-memory history — will be wired to store later
 let _history: CallHistoryEntry[] = [];
+type HistoryListener = () => void;
+const _listeners: HistoryListener[] = [];
 
 export const callHistory = {
     add(entry: Omit<CallHistoryEntry, 'id'>) {
         _history = [{ ...entry, id: Date.now().toString() }, ..._history.slice(0, 99)];
+        _listeners.forEach(l => l());
     },
     get() { return _history; },
+    subscribe(listener: HistoryListener) {
+        _listeners.push(listener);
+        return () => {
+            const idx = _listeners.indexOf(listener);
+            if (idx > -1) _listeners.splice(idx, 1);
+        };
+    }
 };
 
 const getInitials = (uri: string) => {
@@ -38,11 +48,21 @@ const formatDuration = (secs: number) => {
 const formatTime = (ts: number) => {
     const d = new Date(ts);
     const now = new Date();
-    const isToday = d.toDateString() === now.toDateString();
-    if (isToday) {
-        return d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    
+    const timeStr = d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    
+    if (d.toDateString() === now.toDateString()) {
+        return `Hoje às ${timeStr}`;
     }
-    return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+    
+    const yesterday = new Date(now);
+    yesterday.setDate(yesterday.getDate() - 1);
+    if (d.toDateString() === yesterday.toDateString()) {
+        return `Ontem às ${timeStr}`;
+    }
+
+    const dateStr = d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    return `${dateStr} às ${timeStr}`;
 };
 
 const DIRECTION_CONFIG = {
@@ -58,7 +78,13 @@ export const HistoryScreen: React.FC = () => {
     const { actions } = useSipStore();
     const [history, setHistory] = useState<CallHistoryEntry[]>(callHistory.get());
 
-    const refresh = () => setHistory([...callHistory.get()]);
+    useEffect(() => {
+        // Subscribe to changes to auto-refresh the list
+        const unsubscribe = callHistory.subscribe(() => {
+            setHistory([...callHistory.get()]);
+        });
+        return () => unsubscribe();
+    }, []);
 
     const handleCallBack = async (uri: string) => {
         await actions.startCall(uri);
@@ -102,9 +128,6 @@ export const HistoryScreen: React.FC = () => {
 
             <View style={styles.header}>
                 <Text style={styles.headerTitle}>Histórico</Text>
-                <TouchableOpacity onPress={refresh} style={styles.refreshBtn}>
-                    <Text style={styles.refreshIcon}>↻</Text>
-                </TouchableOpacity>
             </View>
 
             <FlatList
@@ -138,15 +161,6 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
     },
     headerTitle: { fontSize: 26, fontWeight: '800', color: '#EAF0FF' },
-    refreshBtn: {
-        width: 36,
-        height: 36,
-        borderRadius: 18,
-        backgroundColor: '#1A2536',
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    refreshIcon: { color: '#4F8CFF', fontSize: 20, fontWeight: '700' },
     list: { padding: 16 },
     row: {
         flexDirection: 'row',

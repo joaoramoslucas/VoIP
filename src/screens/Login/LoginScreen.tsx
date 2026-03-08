@@ -90,7 +90,8 @@ export const LoginScreen: React.FC = () => {
     return (
         <KeyboardAvoidingView
             style={styles.screen}
-            behavior={Platform.select({ ios: 'padding', android: undefined })}
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
         >
             <StatusBar barStyle="light-content" backgroundColor="#0B0F14" />
             <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
@@ -181,12 +182,11 @@ const styles = StyleSheet.create({
         flexGrow: 1,
         paddingHorizontal: 24,
         paddingBottom: 40,
-        justifyContent: 'center',
     },
     logoSection: {
         alignItems: 'center',
         marginBottom: 40,
-        marginTop: 60,
+        marginTop: 80,
     },
     logoCircle: {
         width: 80,

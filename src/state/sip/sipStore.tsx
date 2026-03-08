@@ -92,7 +92,7 @@ export const SipStoreProvider: React.FC<React.PropsWithChildren> = ({ children }
         };
 
         // Track call start
-        if (payload.state === 'connected') {
+        if (payload.state === 'connected' && !callStartRef.current) {
           callStartRef.current = {
             time: Date.now(),
             uri: previous.remoteUri ?? '',
@@ -114,13 +114,22 @@ export const SipStoreProvider: React.FC<React.PropsWithChildren> = ({ children }
         }
 
         // Also track missed calls (ended from incoming without connecting)
-        if (payload.state === 'ended' && previous.state === 'incoming' && !callStartRef.current) {
-          callHistory.add({
-            remoteUri: previous.remoteUri || 'unknown',
-            direction: 'missed',
-            startedAt: Date.now(),
-            durationSeconds: 0,
-          });
+        if (payload.state === 'ended' && !callStartRef.current) {
+          if (previous.state === 'incoming') {
+            callHistory.add({
+              remoteUri: previous.remoteUri || next.remoteUri || 'unknown',
+              direction: 'missed',
+              startedAt: Date.now(),
+              durationSeconds: 0,
+            });
+          } else if (previous.state === 'outgoing') {
+            callHistory.add({
+              remoteUri: previous.remoteUri || next.remoteUri || 'unknown',
+              direction: 'outgoing',
+              startedAt: Date.now(),
+              durationSeconds: 0,
+            });
+          }
         }
 
         return next;
