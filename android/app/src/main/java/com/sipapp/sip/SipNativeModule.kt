@@ -7,6 +7,7 @@ import org.linphone.core.*
 import com.facebook.react.bridge.*
 import com.google.firebase.messaging.FirebaseMessaging
 import com.facebook.react.modules.core.DeviceEventManagerModule
+import android.content.Context
 
 class SipNativeModule(private val reactContext: ReactApplicationContext) :
     ReactContextBaseJavaModule(reactContext) {
@@ -880,6 +881,9 @@ class SipNativeModule(private val reactContext: ReactApplicationContext) :
         val speakerOn = params.hasKey("speakerOn") && params.getBoolean("speakerOn")
 
         try {
+            val am = reactContext.getSystemService(Context.AUDIO_SERVICE) as android.media.AudioManager
+            am.isSpeakerphoneOn = speakerOn
+
             val devices = core.audioDevices
             val target = devices.firstOrNull { device ->
                 val typeAsText = device.type.toString()

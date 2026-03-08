@@ -3,9 +3,9 @@ import { s } from './s';
 import { useNavigation } from '@react-navigation/native';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { View, Text, TouchableOpacity, StatusBar } from 'react-native';
-
 import { useSipStore } from '../../state/sip/sipStore';
 import { getIsIncomingCall, getIsInCall } from '../../services/sip/sipSelectors';
+import Icon from 'react-native-vector-icons/Ionicons';
 
 /** Extrai iniciais de um SIP URI ou nome */
 const getInitials = (uri: string | null): string => {
@@ -80,7 +80,7 @@ export const CallScreen: React.FC = () => {
                 if (navigation.canGoBack()) {
                     navigation.goBack();
                 } else {
-                    navigation.navigate('DrawerHome' as any);
+                    (navigation as any).navigate('DrawerHome');
                 }
             }, 2000);
             return () => clearTimeout(timer);
@@ -158,7 +158,7 @@ export const CallScreen: React.FC = () => {
                                 style={s.declineCircle}
                                 activeOpacity={0.8}
                             >
-                                <Text style={s.actionIcon}>✕</Text>
+                                <Icon name="close" size={32} color="#FF4D4D" />
                             </TouchableOpacity>
                             <Text style={s.actionLabel}>Recusar</Text>
                         </View>
@@ -169,7 +169,7 @@ export const CallScreen: React.FC = () => {
                                 style={s.acceptCircle}
                                 activeOpacity={0.8}
                             >
-                                <Text style={s.actionIcon}>✓</Text>
+                                <Icon name="call" size={30} color="#fff" />
                             </TouchableOpacity>
                             <Text style={s.actionLabel}>Atender</Text>
                         </View>
@@ -184,7 +184,7 @@ export const CallScreen: React.FC = () => {
                                     style={[s.controlCircle, isMuted && s.controlCircleActive]}
                                     activeOpacity={0.8}
                                 >
-                                    <Text style={s.controlIcon}>{isMuted ? '🔇' : '🎤'}</Text>
+                                    <Icon name={isMuted ? "mic-off" : "mic"} size={26} color={isMuted ? "#fff" : "#AAB6D3"} />
                                 </TouchableOpacity>
                                 <Text style={s.controlLabel}>{isMuted ? 'Mudo' : 'Mute'}</Text>
                             </View>
@@ -195,14 +195,14 @@ export const CallScreen: React.FC = () => {
                                     style={[s.controlCircle, isSpeakerEnabled && s.controlCircleActive]}
                                     activeOpacity={0.8}
                                 >
-                                    <Text style={s.controlIcon}>{isSpeakerEnabled ? '🔊' : '🔈'}</Text>
+                                    <Icon name={isSpeakerEnabled ? "volume-high" : "volume-medium"} size={26} color={isSpeakerEnabled ? "#fff" : "#AAB6D3"} />
                                 </TouchableOpacity>
                                 <Text style={s.controlLabel}>{isSpeakerEnabled ? 'Alto' : 'Speaker'}</Text>
                             </View>
 
                             <View style={s.controlItem}>
                                 <TouchableOpacity style={s.controlCircle} activeOpacity={0.8}>
-                                    <Text style={s.controlIcon}>⌨</Text>
+                                    <Icon name="keypad" size={26} color="#AAB6D3" />
                                 </TouchableOpacity>
                                 <Text style={s.controlLabel}>Teclado</Text>
                             </View>
@@ -214,7 +214,7 @@ export const CallScreen: React.FC = () => {
                             activeOpacity={0.8}
                             disabled={!isInCall && call.state !== 'outgoing'}
                         >
-                            <Text style={s.hangupIcon}>📞</Text>
+                            <Icon name="call" size={32} color="#fff" style={{ transform: [{ rotate: '135deg' }] }} />
                         </TouchableOpacity>
                         <Text style={s.hangupLabel}>Desligar</Text>
                     </>

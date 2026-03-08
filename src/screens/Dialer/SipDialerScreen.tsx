@@ -3,6 +3,7 @@ import {
     View, Text, TextInput, TouchableOpacity,
     StyleSheet, StatusBar, KeyboardAvoidingView, Platform, ScrollView,
 } from 'react-native';
+import Icon from 'react-native-vector-icons/Ionicons';
 
 import { DrawerPanel } from '../../app/navigation/DrawerPanel';
 import { useSipStore } from '../../state/sip/sipStore';
@@ -61,9 +62,7 @@ export const DialerScreen: React.FC = () => {
                     style={styles.hamburgerBtn}
                     activeOpacity={0.8}
                 >
-                    <View style={styles.hamburgerLine} />
-                    <View style={styles.hamburgerLine} />
-                    <View style={styles.hamburgerLine} />
+                    <Icon name="menu-outline" size={28} color="#AAB6D3" />
                 </TouchableOpacity>
 
                 {/* Center: title + status */}
@@ -83,8 +82,9 @@ export const DialerScreen: React.FC = () => {
                             disabled={isConnecting || registration.state === 'progress'}
                             activeOpacity={0.8}
                         >
+                            <Icon name="refresh-outline" size={16} color="#4F8CFF" style={{ marginRight: 6 }} />
                             <Text style={styles.reconnectText}>
-                                {isConnecting ? '...' : '↻ Reconectar'}
+                                {isConnecting ? '...' : 'Reconectar'}
                             </Text>
                         </TouchableOpacity>
                     )}
@@ -93,7 +93,7 @@ export const DialerScreen: React.FC = () => {
                         style={styles.logoutBtn}
                         activeOpacity={0.8}
                     >
-                        <Text style={styles.logoutText}>Desconectar</Text>
+                        <Icon name="power-outline" size={18} color="#FF4D4D" />
                     </TouchableOpacity>
                 </View>
             </View>
@@ -124,7 +124,7 @@ export const DialerScreen: React.FC = () => {
                             onPress={() => setDialInput('')}
                             style={styles.clearBtn}
                         >
-                            <Text style={styles.clearIcon}>✕</Text>
+                            <Icon name="backspace-outline" size={18} color="#6B7A99" />
                         </TouchableOpacity>
                     )}
                 </View>
@@ -135,7 +135,7 @@ export const DialerScreen: React.FC = () => {
                     disabled={!canCall}
                     activeOpacity={0.8}
                 >
-                    <Text style={styles.callBtnIcon}>📞</Text>
+                    <Icon name="call" size={22} color="#fff" />
                     <Text style={styles.callBtnText}>Ligar</Text>
                 </TouchableOpacity>
 
@@ -173,15 +173,8 @@ const styles = StyleSheet.create({
         backgroundColor: '#121822',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: 5,
         borderWidth: 1,
         borderColor: '#1E2D47',
-    },
-    hamburgerLine: {
-        width: 18,
-        height: 2,
-        backgroundColor: '#AAB6D3',
-        borderRadius: 1,
     },
     headerCenter: {
         flex: 1,
@@ -201,12 +194,14 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     reconnectBtn: {
+        flexDirection: 'row',
         paddingHorizontal: 14,
         paddingVertical: 10,
         backgroundColor: '#1A2D4A',
         borderRadius: 10,
         borderWidth: 1,
         borderColor: '#4F8CFF40',
+        alignItems: 'center',
     },
     reconnectText: { color: '#4F8CFF', fontWeight: '700', fontSize: 13 },
     logoutBtn: {
@@ -216,8 +211,9 @@ const styles = StyleSheet.create({
         borderRadius: 10,
         borderWidth: 1,
         borderColor: '#FF4D4D40',
+        alignItems: 'center',
+        justifyContent: 'center',
     },
-    logoutText: { color: '#FF4D4D', fontWeight: '700', fontSize: 13 },
 
     dialerArea: {
         flexGrow: 1,

@@ -3,6 +3,7 @@ import {
     View, Text, FlatList, TouchableOpacity, StyleSheet,
     StatusBar, ActivityIndicator, TextInput, PermissionsAndroid, Platform,
 } from 'react-native';
+import Icon from 'react-native-vector-icons/Ionicons';
 import Contacts from 'react-native-contacts';
 import { useSipStore } from '../../state/sip/sipStore';
 
@@ -163,7 +164,7 @@ export const ContactsScreen: React.FC = () => {
                 <Text style={styles.phone}>{item.phone}</Text>
             </View>
             <View style={styles.callBtn}>
-                <Text style={styles.callIcon}>📞</Text>
+                <Icon name="call" size={20} color="#EAF0FF" />
             </View>
         </TouchableOpacity>
     );
@@ -181,7 +182,7 @@ export const ContactsScreen: React.FC = () => {
 
             {!loading && (
                 <View style={styles.searchBar}>
-                    <Text style={styles.searchIcon}>🔍</Text>
+                    <Icon name="search-outline" size={20} color="#6B7A99" style={{ marginRight: 10 }} />
                     <TextInput
                         style={styles.searchInput}
                         value={search}
@@ -193,7 +194,7 @@ export const ContactsScreen: React.FC = () => {
                     />
                     {search.length > 0 && (
                         <TouchableOpacity onPress={() => setSearch('')}>
-                            <Text style={styles.clearSearch}>✕</Text>
+                            <Icon name="close-circle" size={20} color="#6B7A99" />
                         </TouchableOpacity>
                     )}
                 </View>
@@ -213,7 +214,7 @@ export const ContactsScreen: React.FC = () => {
                     ItemSeparatorComponent={() => <View style={styles.sep} />}
                     ListEmptyComponent={
                         <View style={styles.center}>
-                            <Text style={styles.emptyIcon}>👥</Text>
+                            <Icon name="people-outline" size={52} color="#6B7A99" style={{ marginBottom: 16 }} />
                             <Text style={styles.emptyTitle}>Nenhum contato encontrado</Text>
                             <Text style={styles.emptyText}>
                                 {search ? 'Tente outra busca.' : 'Toque em + para adicionar um contato SIP.'}
@@ -229,7 +230,7 @@ export const ContactsScreen: React.FC = () => {
                 onPress={() => setShowAdd(true)}
                 activeOpacity={0.85}
             >
-                <Text style={styles.fabIcon}>+</Text>
+                <Icon name="add" size={32} color="#fff" />
             </TouchableOpacity>
 
             {/* Add Contact Modal */}

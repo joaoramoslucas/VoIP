@@ -55,5 +55,13 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<false/>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Precisamos de acesso ao microfone para você realizar chamadas VoIP.</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>audio</string>
+		<string>fetch</string>
+		<string>voip</string>
+	</array>
 </dict>
 </plist>

@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import Icon from 'react-native-vector-icons/Ionicons';
 
 import { multiAccountStorage, StoredAccount } from '../../services/storage/credentialStorage';
 import { useSipStore } from '../../state/sip/sipStore';
@@ -127,12 +128,12 @@ export const DrawerPanel: React.FC<Props> = ({ visible, onClose }) => {
                     <View style={styles.header}>
                         <View style={styles.headerLogo}>
                             <View style={styles.logoCircle}>
-                                <Text style={styles.logoIcon}>📞</Text>
+                                <Icon name="call" size={18} color="#EAF0FF" />
                             </View>
                             <Text style={styles.appName}>SipApp</Text>
                         </View>
                         <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
-                            <Text style={styles.closeIcon}>✕</Text>
+                            <Icon name="close" size={20} color="#6B7A99" />
                         </TouchableOpacity>
                     </View>
 
@@ -180,16 +181,16 @@ export const DrawerPanel: React.FC<Props> = ({ visible, onClose }) => {
                         )}
 
                         <TouchableOpacity style={styles.addAccountBtn} onPress={handleAddAccount} activeOpacity={0.8}>
-                            <Text style={styles.addAccountIcon}>⊕</Text>
+                            <Icon name="add-circle-outline" size={24} color="#4F8CFF" />
                             <Text style={styles.addAccountText}>Adicionar conta</Text>
                         </TouchableOpacity>
 
                         <View style={styles.divider} />
 
                         <TouchableOpacity style={styles.menuItem} onPress={handleSettings} activeOpacity={0.8}>
-                            <Text style={styles.menuItemIcon}>⚙</Text>
+                            <Icon name="settings-outline" size={20} color="#6B7A99" />
                             <Text style={styles.menuItemText}>Configurações SIP</Text>
-                            <Text style={styles.menuItemChevron}>›</Text>
+                            <Icon name="chevron-forward" size={20} color="#3A4A60" />
                         </TouchableOpacity>
                     </ScrollView>
                 </Animated.View>

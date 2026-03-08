@@ -64,6 +64,7 @@ export const SipStoreProvider: React.FC<React.PropsWithChildren> = ({ children }
 
   const subscribedRef = useRef(false);
   const callStartRef = useRef<{ time: number; uri: string; direction: 'incoming' | 'outgoing' } | null>(null);
+  const credsRef = useRef<SipAccountCredentials | null>(null);
 
   useEffect(() => {
     if (subscribedRef.current) return;
@@ -76,6 +77,10 @@ export const SipStoreProvider: React.FC<React.PropsWithChildren> = ({ children }
         lastUpdatedAtMs: nowMs(),
       };
       setRegistration(next);
+
+      if (payload.state === 'ok' && credsRef.current) {
+        credentialStorage.save(credsRef.current).catch(console.error);
+      }
     });
 
     const callSub = sipEvents.onCallStateChanged((payload) => {
@@ -164,6 +169,7 @@ export const SipStoreProvider: React.FC<React.PropsWithChildren> = ({ children }
     await initializeCore();
 
     setLastUsedCredentials(credentials);
+    credsRef.current = credentials;
 
     await sipNative.register({
       sipDomain: credentials.sipDomain,
@@ -171,9 +177,6 @@ export const SipStoreProvider: React.FC<React.PropsWithChildren> = ({ children }
       password: credentials.password,
       transport: credentials.transport,
     });
-
-    // Salvar credenciais para auto-login
-    await credentialStorage.save(credentials);
   };
 
   const autoLogin = async (): Promise<boolean> => {

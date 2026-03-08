@@ -3,6 +3,7 @@ import {
     View, Text, FlatList, TouchableOpacity, StyleSheet, StatusBar,
 } from 'react-native';
 import { useSipStore } from '../../state/sip/sipStore';
+import Icon from 'react-native-vector-icons/Ionicons';
 
 export type CallHistoryEntry = {
     id: string;
@@ -66,9 +67,9 @@ const formatTime = (ts: number) => {
 };
 
 const DIRECTION_CONFIG = {
-    incoming: { icon: '↙', color: '#20D17A', label: 'Recebida' },
-    outgoing: { icon: '↗', color: '#4F8CFF', label: 'Realizada' },
-    missed: { icon: '↙', color: '#FF4D4D', label: 'Perdida' },
+    incoming: { icon: 'arrow-down-outline', color: '#20D17A', label: 'Recebida' },
+    outgoing: { icon: 'arrow-up-outline', color: '#4F8CFF', label: 'Realizada' },
+    missed: { icon: 'close-outline', color: '#FF4D4D', label: 'Perdida' },
 };
 
 const AVATAR_COLORS = ['#4F8CFF', '#20D17A', '#FFB020', '#FF4D4D', '#A78BFA', '#34D399'];
@@ -113,7 +114,7 @@ export const HistoryScreen: React.FC = () => {
                         <Text style={styles.timeText}>{formatTime(item.startedAt)}</Text>
                     </View>
                     <View style={styles.infoBottom}>
-                        <Text style={[styles.dirIcon, { color: dir.color }]}>{dir.icon}</Text>
+                        <Icon name={dir.icon} size={14} color={dir.color} style={{ marginRight: 4 }} />
                         <Text style={[styles.dirLabel, { color: dir.color }]}>{dir.label}</Text>
                         <Text style={styles.duration}> · {formatDuration(item.durationSeconds)}</Text>
                     </View>
@@ -138,7 +139,7 @@ export const HistoryScreen: React.FC = () => {
                 ItemSeparatorComponent={() => <View style={styles.separator} />}
                 ListEmptyComponent={
                     <View style={styles.emptyState}>
-                        <Text style={styles.emptyIcon}>📋</Text>
+                        <Icon name="time-outline" size={52} color="#6B7A99" style={{ marginBottom: 16 }} />
                         <Text style={styles.emptyTitle}>Sem histórico</Text>
                         <Text style={styles.emptyText}>Suas chamadas aparecerão aqui.</Text>
                     </View>

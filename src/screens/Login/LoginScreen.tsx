@@ -1,9 +1,9 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
     View, Text, TextInput, TouchableOpacity,
-    KeyboardAvoidingView, Platform, ActivityIndicator,
-    PermissionsAndroid, ScrollView, StatusBar,
+    PermissionsAndroid, ScrollView, StatusBar, KeyboardAvoidingView, Platform, ActivityIndicator,
 } from 'react-native';
+import Icon from 'react-native-vector-icons/Ionicons';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
@@ -98,7 +98,7 @@ export const LoginScreen: React.FC = () => {
                 {/* Logo */}
                 <View style={styles.logoSection}>
                     <View style={styles.logoCircle}>
-                        <Text style={styles.logoIcon}>📞</Text>
+                        <Icon name="call" size={36} color="#EAF0FF" />
                     </View>
                     <Text style={styles.appName}>SipApp</Text>
                     <Text style={styles.tagline}>Seu telefone VoIP profissional</Text>
@@ -164,7 +164,8 @@ export const LoginScreen: React.FC = () => {
                     onPress={() => navigation.navigate('SipConfig')}
                     activeOpacity={0.7}
                 >
-                    <Text style={styles.configLinkText}>⚙️  Configurar servidor SIP</Text>
+                    <Icon name="settings-outline" size={16} color="#4F8CFF" />
+                    <Text style={styles.configLinkText}>Configurar servidor SIP</Text>
                 </TouchableOpacity>
             </ScrollView>
         </KeyboardAvoidingView>
@@ -287,6 +288,9 @@ const styles = StyleSheet.create({
         marginTop: 24,
         paddingVertical: 8,
         paddingHorizontal: 16,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
     },
     configLinkText: {
         color: '#4F8CFF',

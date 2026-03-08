@@ -40,7 +40,7 @@ function assertNativeFunction<K extends keyof SipNativeModuleType>(name: K): Sip
       `Keys disponíveis: ${keys.join(', ')}`
     );
   }
-  return (fn.bind(sipNativeModule));
+  return (fn.bind(sipNativeModule)) as unknown as SipNativeModuleType[K];
 }
 
 export const sipNative = {

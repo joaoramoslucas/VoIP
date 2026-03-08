@@ -76,6 +76,8 @@ class CallForegroundService : Service() {
     }
 
     private var wakeLock: PowerManager.WakeLock? = null
+    private var proximityWakeLock: PowerManager.WakeLock? = null
+    private var audioManager: android.media.AudioManager? = null
     private var isInCall = false
 
     override fun onCreate() {
@@ -96,12 +98,14 @@ class CallForegroundService : Service() {
                 startForeground(CALL_NOTIFICATION_ID, notification)
                 isInCall = true
                 currentMode = "call"
-                acquireWakeLock()
+                acquireWakeLocks()
+                setupAudioRouting()
                 Log.i(TAG, "Foreground service: CALL mode (caller=$caller, incoming=$isIncoming)")
             }
             ACTION_STOP_CALL -> {
                 isInCall = false
-                releaseWakeLock()
+                releaseWakeLocks()
+                restoreAudioRouting()
                 val notification = buildKeepAliveNotification()
                 startForeground(KEEPALIVE_NOTIFICATION_ID, notification)
                 currentMode = "keepalive"
@@ -117,7 +121,8 @@ class CallForegroundService : Service() {
             }
             ACTION_STOP_KEEPALIVE -> {
                 if (!isInCall) {
-                    releaseWakeLock()
+                    releaseWakeLocks()
+                    restoreAudioRouting()
                     stopForeground(STOP_FOREGROUND_REMOVE)
                     stopSelf()
                     currentMode = null
@@ -131,7 +136,8 @@ class CallForegroundService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onDestroy() {
-        releaseWakeLock()
+        releaseWakeLocks()
+        restoreAudioRouting()
         currentMode = null
         super.onDestroy()
     }
@@ -268,9 +274,9 @@ class CallForegroundService : Service() {
             .build()
     }
 
-    private fun acquireWakeLock() {
+    private fun acquireWakeLocks() {
+        val pm = getSystemService(Context.POWER_SERVICE) as PowerManager
         if (wakeLock == null) {
-            val pm = getSystemService(Context.POWER_SERVICE) as PowerManager
             wakeLock = pm.newWakeLock(
                 PowerManager.PARTIAL_WAKE_LOCK,
                 "SipApp::CallWakeLock"
@@ -279,9 +285,26 @@ class CallForegroundService : Service() {
             }
             Log.i(TAG, "WakeLock acquired")
         }
+
+        if (proximityWakeLock == null) {
+            val proximityFlag = 32 // PowerManager.PROXIMITY_SCREEN_OFF_WAKE_LOCK
+            try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP && pm.isWakeLockLevelSupported(proximityFlag)) {
+                    proximityWakeLock = pm.newWakeLock(
+                        proximityFlag,
+                        "SipApp::ProximityWakeLock"
+                    ).apply {
+                        acquire(60 * 60 * 1000L)
+                    }
+                    Log.i(TAG, "ProximityWakeLock acquired")
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "Proximity WakeLock not supported: ${e.message}")
+            }
+        }
     }
 
-    private fun releaseWakeLock() {
+    private fun releaseWakeLocks() {
         wakeLock?.let {
             if (it.isHeld) {
                 it.release()
@@ -289,5 +312,47 @@ class CallForegroundService : Service() {
             }
         }
         wakeLock = null
+
+        proximityWakeLock?.let {
+            if (it.isHeld) {
+                it.release()
+                Log.i(TAG, "ProximityWakeLock released")
+            }
+        }
+        proximityWakeLock = null
+    }
+
+    private fun setupAudioRouting() {
+        audioManager = getSystemService(Context.AUDIO_SERVICE) as android.media.AudioManager
+        audioManager?.let { am ->
+            try {
+                am.mode = android.media.AudioManager.MODE_IN_COMMUNICATION
+                am.isSpeakerphoneOn = false
+                if (am.isBluetoothScoAvailableOffCall) {
+                    am.startBluetoothSco()
+                    am.isBluetoothScoOn = true
+                }
+                Log.i(TAG, "Audio routing setup: MODE_IN_COMMUNICATION, speaker=false, bt=${am.isBluetoothScoOn}")
+            } catch (e: Exception) {
+                Log.e(TAG, "Erro no setup de audio: ${e.message}")
+            }
+        }
+    }
+
+    private fun restoreAudioRouting() {
+        audioManager?.let { am ->
+            try {
+                if (am.isBluetoothScoOn) {
+                    am.stopBluetoothSco()
+                    am.isBluetoothScoOn = false
+                }
+                am.mode = android.media.AudioManager.MODE_NORMAL
+                am.isSpeakerphoneOn = false
+                Log.i(TAG, "Audio routing restored: MODE_NORMAL")
+            } catch (e: Exception) {
+                Log.e(TAG, "Erro no restore de audio: ${e.message}")
+            }
+        }
+        audioManager = null
     }
 }
