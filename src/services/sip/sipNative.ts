@@ -4,9 +4,9 @@ import { NativeModules } from 'react-native';
 export type SipNativeInitializeOptions = Record<string, unknown>;
 
 export type SipNativeRegisterParams = {
-  sipDomain: string;
   username: string;
   password: string;
+  sipDomain: string;
   transport?: 'udp' | 'tcp' | 'tls';
 };
 
@@ -15,18 +15,17 @@ export type SipNativeStartCallParams = {
 };
 
 type SipNativeModuleType = {
-  initialize: (options: SipNativeInitializeOptions) => Promise<boolean>;
-  register: (params: SipNativeRegisterParams) => Promise<boolean>;
-  unregister: () => Promise<boolean>;
-  startCall: (params: SipNativeStartCallParams) => Promise<boolean>;
-
-  setMute: (params: { muted: boolean }) => Promise<boolean>;
-  setSpeaker: (params: { speakerOn: boolean }) => Promise<boolean>;
   hangup: () => Promise<boolean>;
+  unregister: () => Promise<boolean>;
   acceptCall: () => Promise<boolean>;
   declineCall: () => Promise<boolean>;
-  setPushToken: (params: { token: string }) => Promise<boolean>;
   getPushToken: () => Promise<string | null>;
+  setMute: (params: { muted: boolean }) => Promise<boolean>;
+  setPushToken: (params: { token: string }) => Promise<boolean>;
+  register: (params: SipNativeRegisterParams) => Promise<boolean>;
+  setSpeaker: (params: { speakerOn: boolean }) => Promise<boolean>;
+  startCall: (params: SipNativeStartCallParams) => Promise<boolean>;
+  initialize: (options: SipNativeInitializeOptions) => Promise<boolean>;
 };
 
 const sipNativeModule = NativeModules.SipNativeModule as SipNativeModuleType | undefined;

@@ -7,10 +7,10 @@ import { sipNative } from '../services/sip/sipNative';
 import { sipEvents } from '../services/sip/sipEvents';
 
 export function SipDebugScreen() {
-  const [sipDomain, setSipDomain] = useState('sip.seudominio.com');
+  const [callTo, setCallTo] = useState('1002');
   const [username, setUsername] = useState('1001');
   const [password, setPassword] = useState('senha');
-  const [callTo, setCallTo] = useState('1002');
+  const [sipDomain, setSipDomain] = useState('sip.seudominio.com');
   const [transport, setTransport] = useState<'udp' | 'tcp' | 'tls'>('udp');
 
   const [logs, setLogs] = useState<string[]>([]);

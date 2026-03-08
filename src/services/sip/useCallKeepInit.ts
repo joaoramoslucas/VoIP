@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
-import RNCallKeep, { IOptions } from 'react-native-callkeep';
 import { useSipStore } from '../../state/sip/sipStore';
+import RNCallKeep, { IOptions } from 'react-native-callkeep';
 
 /**
  * Registra os hooks do CallKit (iOS) e ConnectionService (Android).
@@ -13,18 +13,18 @@ export const useCallKeepInit = () => {
         const options: IOptions = {
             ios: {
                 appName: 'SipApp',
-                imageName: 'sim_icon',
                 supportsVideo: false,
+                imageName: 'sim_icon',
                 maximumCallGroups: '1',
                 maximumCallsPerCallGroup: '1',
             },
             android: {
-                alertTitle: 'Permissão necessária',
-                alertDescription: 'Este app precisa acessar seu microfone.',
-                cancelButton: 'Cancelar',
                 okButton: 'ok',
                 selfManaged: true,
+                cancelButton: 'Cancelar',
                 additionalPermissions: [],
+                alertTitle: 'Permissão necessária',
+                alertDescription: 'Este app precisa acessar seu microfone.',
             }
         };
 

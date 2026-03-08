@@ -1,44 +1,44 @@
 export type SipTransport = 'tcp' | 'udp' | 'tls';
 
 export type SipRegistrationMappedState =
-    | 'none'
-    | 'progress'
-    | 'ok'
-    | 'failed';
+  | 'none'
+  | 'progress'
+  | 'ok'
+  | 'failed';
 
 export type SipCallMappedState =
-    | 'idle'
-    | 'incoming'
-    | 'outgoing'
-    | 'connected'
-    | 'updating'
-    | 'ended'
-    | 'error';
+  | 'idle'
+  | 'incoming'
+  | 'outgoing'
+  | 'connected'
+  | 'updating'
+  | 'ended'
+  | 'error';
 
 export type SipAccountCredentials = {
-    sipDomain: string;
-    username: string;
-    password: string;
-    transport: SipTransport;
+  sipDomain: string;
+  username: string;
+  password: string;
+  transport: SipTransport;
 };
 
 export type SipRegistrationSnapshot = {
-    message: string;
-    lastUpdatedAtMs: number;
-    state: SipRegistrationMappedState;
+  message: string;
+  lastUpdatedAtMs: number;
+  state: SipRegistrationMappedState;
 };
 
 export type SipCallSnapshot = {
-    message: string;
-    lastUpdatedAtMs: number;
-    remoteUri: string | null;
-    state: SipCallMappedState;
-    direction: 'Incoming' | 'Outgoing' | null;
+  message: string;
+  lastUpdatedAtMs: number;
+  remoteUri: string | null;
+  state: SipCallMappedState;
+  direction: 'Incoming' | 'Outgoing' | null;
 };
 
 export type SipCallStateChangedPayload = {
-  state: SipCallMappedState;
   message?: string;
+  state: SipCallMappedState;
   remoteUri?: string | null;   // present when native restores call state for dead-app
   direction?: 'Incoming' | 'Outgoing';
 };
@@ -50,6 +50,6 @@ export type SipIncomingCallPayload = {
 export type SipCallEventPayload = SipCallStateChangedPayload;
 
 export type SipRegistrationEventPayload = {
-  state: SipRegistrationMappedState;
   message?: string;
+  state: SipRegistrationMappedState;
 };

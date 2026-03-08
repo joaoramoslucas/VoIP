@@ -23,11 +23,6 @@ export const SplashScreen: React.FC = () => {
     const navigation = useNavigation<Nav>();
     const { actions, call } = useSipStore();
 
-    // Use a ref so async callbacks always read the LATEST call.state
-    // (avoids stale closure bug in setTimeout)
-    const callStateRef = useRef(call.state);
-    useEffect(() => { callStateRef.current = call.state; }, [call.state]);
-
     const logoOpacity = useRef(new Animated.Value(0)).current;
     const logoScale = useRef(new Animated.Value(0.7)).current;
     const barWidth = useRef(new Animated.Value(0)).current;
@@ -36,11 +31,10 @@ export const SplashScreen: React.FC = () => {
     const [statusMsg, setStatusMsg] = useState('Iniciando...');
 
     useEffect(() => {
-        // If there's already an active call (rare: app barely woke with state set),
-        // skip animation and go straight to DrawerHome.
-        // Note: IncomingCallNavigator will handle navigating to CallScreen.
+        // If there's already an active call (app woke up from dead via notification),
+        // skip animation and permissions — go straight to DrawerHome then Call.
         if (call.state === 'incoming' || call.state === 'connected') {
-            proceedToApp(true);
+            proceedToApp(true, true);
             return;
         }
 
@@ -131,17 +125,20 @@ export const SplashScreen: React.FC = () => {
         if (active) {
             const ok = await actions.autoLogin();
             if (ok) {
-                // Give SIP stack 1.2s to emit any pending call state (from postDelayed in SipNativeModule).
-                // IncomingCallNavigator will navigate to Call once it sees the connected state.
-                setTimeout(() => proceedToApp(false), 1200);
+                // After autoLogin, call.state might still update from native events.
+                // Give a moment for the SIP stack to emit call state, then navigate.
+                setTimeout(() => {
+                    const hasCall = call.state === 'incoming' || call.state === 'connected';
+                    proceedToApp(false, hasCall);
+                }, 800);
                 return;
             }
         }
         navigation.replace('Login');
     };
 
-    // Navigate to DrawerHome. IncomingCallNavigator handles navigating to Call.
-    const proceedToApp = async (fast: boolean) => {
+    // Navigate to DrawerHome, then to Call if there's an active call.
+    const proceedToApp = async (fast: boolean, hasActiveCall = false) => {
         if (!fast) {
             const active = await multiAccountStorage.getActive();
             if (!active) {
@@ -150,14 +147,10 @@ export const SplashScreen: React.FC = () => {
             }
         }
         navigation.replace('DrawerHome');
-        // After DrawerHome mounts, check (via ref, not stale closure) if call is active
-        // and trigger navigateToCall as a backup in case IncomingCallNavigator missed it
-        setTimeout(() => {
-            const state = callStateRef.current;
-            if (state === 'incoming' || state === 'connected') {
-                navigateToCall();
-            }
-        }, 500);
+        // If there's a call in progress, go to CallScreen after DrawerHome mounts
+        if (hasActiveCall) {
+            setTimeout(() => navigateToCall(), 300);
+        }
     };
 
     return (

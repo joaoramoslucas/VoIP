@@ -1,16 +1,18 @@
+import Icon from 'react-native-vector-icons/Ionicons';
+
 import React, { useState, useEffect } from 'react';
 import {
     View, Text, FlatList, TouchableOpacity, StyleSheet, StatusBar,
 } from 'react-native';
+
 import { useSipStore } from '../../state/sip/sipStore';
-import Icon from 'react-native-vector-icons/Ionicons';
 
 export type CallHistoryEntry = {
     id: string;
     remoteUri: string;
-    direction: 'incoming' | 'outgoing' | 'missed';
     startedAt: number;
     durationSeconds: number;
+    direction: 'incoming' | 'outgoing' | 'missed';
 };
 
 // Simple in-memory history — will be wired to store later
@@ -49,13 +51,13 @@ const formatDuration = (secs: number) => {
 const formatTime = (ts: number) => {
     const d = new Date(ts);
     const now = new Date();
-    
+
     const timeStr = d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-    
+
     if (d.toDateString() === now.toDateString()) {
         return `Hoje às ${timeStr}`;
     }
-    
+
     const yesterday = new Date(now);
     yesterday.setDate(yesterday.getDate() - 1);
     if (d.toDateString() === yesterday.toDateString()) {
@@ -133,8 +135,8 @@ export const HistoryScreen: React.FC = () => {
 
             <FlatList
                 data={history}
-                keyExtractor={i => i.id}
                 renderItem={renderItem}
+                keyExtractor={i => i.id}
                 contentContainerStyle={styles.list}
                 ItemSeparatorComponent={() => <View style={styles.separator} />}
                 ListEmptyComponent={
@@ -150,58 +152,109 @@ export const HistoryScreen: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-    screen: { flex: 1, backgroundColor: '#0B0F14' },
+    screen: {
+        flex: 1,
+        backgroundColor: '#0B0F14',
+    },
     header: {
         paddingTop: 52,
         paddingBottom: 16,
-        paddingHorizontal: 24,
         borderBottomWidth: 1,
-        borderBottomColor: '#1E2D47',
         flexDirection: 'row',
         alignItems: 'center',
+        paddingHorizontal: 24,
+        borderBottomColor: '#1E2D47',
         justifyContent: 'space-between',
     },
-    headerTitle: { fontSize: 26, fontWeight: '800', color: '#EAF0FF' },
-    list: { padding: 16 },
+    headerTitle: {
+        fontSize: 26,
+        fontWeight: '800',
+        color: '#EAF0FF',
+    },
+    list: {
+        padding: 16,
+    },
     row: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: '#121822',
-        borderRadius: 16,
         padding: 14,
         borderWidth: 1,
+        borderRadius: 16,
+        flexDirection: 'row',
+        alignItems: 'center',
         borderColor: '#1E2D47',
+        backgroundColor: '#121822',
     },
     avatar: {
         width: 46,
         height: 46,
+        flexShrink: 0,
+        borderWidth: 1,
+        marginRight: 14,
         borderRadius: 23,
         alignItems: 'center',
         justifyContent: 'center',
-        borderWidth: 1,
-        marginRight: 14,
-        flexShrink: 0,
     },
-    avatarText: { fontSize: 15, fontWeight: '800' },
-    info: { flex: 1 },
+    avatarText: {
+        fontSize: 15,
+        fontWeight: '800',
+    },
+    info: {
+        flex: 1,
+    },
     infoTop: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
         marginBottom: 4,
-    },
-    name: { fontSize: 15, fontWeight: '700', color: '#EAF0FF', flex: 1, marginRight: 8 },
-    timeText: { fontSize: 12, color: '#6B7A99', flexShrink: 0 },
-    infoBottom: { flexDirection: 'row', alignItems: 'center' },
-    dirIcon: { fontSize: 13, fontWeight: '900', marginRight: 3 },
-    dirLabel: { fontSize: 12, fontWeight: '600' },
-    duration: { fontSize: 12, color: '#6B7A99' },
-    separator: { height: 8 },
-    emptyState: {
+        flexDirection: 'row',
         alignItems: 'center',
-        paddingTop: 80,
+        justifyContent: 'space-between',
     },
-    emptyIcon: { fontSize: 48, marginBottom: 16 },
-    emptyTitle: { fontSize: 18, fontWeight: '700', color: '#EAF0FF', marginBottom: 8 },
-    emptyText: { fontSize: 14, color: '#6B7A99', textAlign: 'center' },
+    name: {
+        flex: 1,
+        fontSize: 15,
+        marginRight: 8,
+        fontWeight: '700',
+        color: '#EAF0FF',
+    },
+    timeText: {
+        fontSize: 12,
+        flexShrink: 0,
+        color: '#6B7A99',
+    },
+    infoBottom: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    dirIcon: {
+        fontSize: 13,
+        marginRight: 3,
+        fontWeight: '900',
+    },
+    dirLabel: {
+        fontSize: 12,
+        fontWeight: '600',
+    },
+    duration: {
+        fontSize: 12,
+        color: '#6B7A99',
+    },
+    separator: {
+        height: 8,
+    },
+    emptyState: {
+        paddingTop: 80,
+        alignItems: 'center',
+    },
+    emptyIcon: {
+        fontSize: 48,
+        marginBottom: 16,
+    },
+    emptyTitle: {
+        fontSize: 18,
+        marginBottom: 8,
+        fontWeight: '700',
+        color: '#EAF0FF',
+    },
+    emptyText: {
+        fontSize: 14,
+        color: '#6B7A99',
+        textAlign: 'center',
+    },
 });

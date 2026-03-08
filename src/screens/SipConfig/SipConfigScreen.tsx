@@ -6,8 +6,8 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
-import { RootStackParams } from '../../app/RootStackParams';
 import { useSipStore } from '../../state/sip/sipStore';
+import { RootStackParams } from '../../app/RootStackParams';
 import type { SipTransport } from '../../services/sip/sipTypes';
 
 type Nav = NativeStackNavigationProp<RootStackParams, 'SipConfig'>;
@@ -39,8 +39,8 @@ export const SipConfigScreen: React.FC = () => {
     );
 
     return (
-        <KeyboardAvoidingView 
-            style={styles.screen} 
+        <KeyboardAvoidingView
+            style={styles.screen}
             behavior={Platform.OS === 'ios' ? 'padding' : undefined}
             keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
         >
@@ -64,13 +64,13 @@ export const SipConfigScreen: React.FC = () => {
                     <View style={styles.fieldGroup}>
                         <Text style={styles.label}>Domínio / Servidor</Text>
                         <TextInput
-                            style={styles.input}
                             value={domain}
-                            onChangeText={setDomain}
-                            placeholder="ex: sip.linphone.org"
-                            placeholderTextColor="#4A5568"
-                            autoCapitalize="none"
                             autoCorrect={false}
+                            style={styles.input}
+                            autoCapitalize="none"
+                            onChangeText={setDomain}
+                            placeholderTextColor="#4A5568"
+                            placeholder="ex: sip.linphone.org"
                         />
                     </View>
 
@@ -103,95 +103,130 @@ export const SipConfigScreen: React.FC = () => {
 const styles = StyleSheet.create({
     screen: { flex: 1, backgroundColor: '#0B0F14' },
     header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingHorizontal: 20,
         paddingTop: 52,
         paddingBottom: 16,
+        flexDirection: 'row',
+        alignItems: 'center',
         borderBottomWidth: 1,
+        paddingHorizontal: 20,
         borderBottomColor: '#1E2D47',
+        justifyContent: 'space-between',
     },
     backBtn: {
         width: 40,
         height: 40,
         borderRadius: 20,
-        backgroundColor: '#1A2536',
         alignItems: 'center',
         justifyContent: 'center',
+        backgroundColor: '#1A2536',
     },
-    backIcon: { color: '#EAF0FF', fontSize: 18, fontWeight: '600' },
-    headerTitle: { fontSize: 17, fontWeight: '700', color: '#EAF0FF' },
-    scroll: { padding: 24, paddingBottom: 40 },
+    backIcon: {
+        fontSize: 18,
+        fontWeight: '600',
+        color: '#EAF0FF',
+    },
+    headerTitle: {
+        fontSize: 17,
+        fontWeight: '700',
+        color: '#EAF0FF',
+    },
+    scroll: {
+        padding: 24,
+        paddingBottom: 40,
+    },
     sectionDescription: {
-        color: '#6B7A99',
         fontSize: 14,
         lineHeight: 20,
         marginBottom: 20,
+        color: '#6B7A99',
     },
     card: {
-        backgroundColor: '#121822',
-        borderRadius: 20,
         padding: 20,
         borderWidth: 1,
+        borderRadius: 20,
+        marginBottom: 16,
         borderColor: '#1E2D47',
+        backgroundColor: '#121822',
+    },
+    fieldGroup: {
         marginBottom: 16,
     },
-    fieldGroup: { marginBottom: 16 },
     label: {
         fontSize: 12,
-        fontWeight: '600',
-        color: '#6B7A99',
         marginBottom: 8,
-        textTransform: 'uppercase',
+        fontWeight: '600',
         letterSpacing: 0.5,
+        color: '#6B7A99',
+        textTransform: 'uppercase',
     },
     input: {
         height: 50,
-        backgroundColor: '#0E141D',
-        borderRadius: 12,
-        borderWidth: 1,
-        borderColor: '#1E2D47',
-        paddingHorizontal: 16,
-        color: '#EAF0FF',
         fontSize: 15,
-    },
-    chipRow: { flexDirection: 'row', gap: 10 },
-    chip: {
-        paddingHorizontal: 20,
-        paddingVertical: 10,
-        borderRadius: 10,
-        backgroundColor: '#0E141D',
         borderWidth: 1,
+        borderRadius: 12,
+        color: '#EAF0FF',
+        paddingHorizontal: 16,
         borderColor: '#1E2D47',
+        backgroundColor: '#0E141D',
+    },
+    chipRow: {
+        gap: 10,
+        flexDirection: 'row',
+    },
+    chip: {
+        borderWidth: 1,
+        borderRadius: 10,
+        paddingVertical: 10,
+        paddingHorizontal: 20,
+        borderColor: '#1E2D47',
+        backgroundColor: '#0E141D',
     },
     chipActive: {
-        backgroundColor: '#1A2D4A',
         borderColor: '#4F8CFF',
+        backgroundColor: '#1A2D4A',
     },
-    chipText: { color: '#6B7A99', fontWeight: '700', fontSize: 13 },
-    chipTextActive: { color: '#4F8CFF' },
+    chipText: {
+        fontSize: 13,
+        fontWeight: '700',
+        color: '#6B7A99',
+    },
+    chipTextActive: {
+        color: '#4F8CFF',
+    },
     infoBox: {
-        backgroundColor: '#0F1E30',
-        borderRadius: 14,
         padding: 16,
         borderWidth: 1,
-        borderColor: '#1E3A5F',
+        borderRadius: 14,
         marginBottom: 24,
+        borderColor: '#1E3A5F',
+        backgroundColor: '#0F1E30',
     },
-    infoTitle: { color: '#4F8CFF', fontWeight: '700', marginBottom: 6, fontSize: 14 },
-    infoText: { color: '#6B7A99', fontSize: 13, lineHeight: 18 },
+    infoTitle: {
+        fontSize: 14,
+        marginBottom: 6,
+        fontWeight: '700',
+        color: '#4F8CFF',
+    },
+    infoText: {
+        fontSize: 13,
+        lineHeight: 18,
+        color: '#6B7A99',
+    },
     saveBtn: {
         height: 52,
+        elevation: 6,
         borderRadius: 14,
-        backgroundColor: '#4F8CFF',
+        shadowRadius: 12,
+        shadowOpacity: 0.4,
         alignItems: 'center',
         justifyContent: 'center',
         shadowColor: '#4F8CFF',
+        backgroundColor: '#4F8CFF',
         shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.4,
-        shadowRadius: 12,
-        elevation: 6,
     },
-    saveBtnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+    saveBtnText: {
+        fontSize: 16,
+        color: '#fff',
+        fontWeight: '700',
+    },
 });

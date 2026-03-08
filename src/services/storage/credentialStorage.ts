@@ -1,5 +1,5 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { SipAccountCredentials } from '../sip/sipTypes';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const ACCOUNTS_KEY = '@sipapp_accounts';
 const ACTIVE_KEY = '@sipapp_active_account';

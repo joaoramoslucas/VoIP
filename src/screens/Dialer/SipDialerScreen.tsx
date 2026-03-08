@@ -5,8 +5,8 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 
-import { DrawerPanel } from '../../app/navigation/DrawerPanel';
 import { useSipStore } from '../../state/sip/sipStore';
+import { DrawerPanel } from '../../app/navigation/DrawerPanel';
 import { getIsRegistered } from '../../services/sip/sipSelectors';
 
 export const DialerScreen: React.FC = () => {
@@ -14,8 +14,8 @@ export const DialerScreen: React.FC = () => {
     const isRegistered = useMemo(() => getIsRegistered(registration), [registration]);
 
     const [dialInput, setDialInput] = useState('');
-    const [isConnecting, setIsConnecting] = useState(false);
     const [drawerOpen, setDrawerOpen] = useState(false);
+    const [isConnecting, setIsConnecting] = useState(false);
 
     const handleCall = async () => {
         if (!dialInput.trim() || !isRegistered) return;
@@ -34,19 +34,19 @@ export const DialerScreen: React.FC = () => {
     const statusColor = isRegistered
         ? '#20D17A'
         : registration.state === 'progress'
-        ? '#FFB020'
-        : '#FF4D4D';
+            ? '#FFB020'
+            : '#FF4D4D';
     const statusText = isRegistered
         ? 'Conectado'
         : registration.state === 'progress'
-        ? 'Conectando...'
-        : 'Desconectado';
+            ? 'Conectando...'
+            : 'Desconectado';
 
     const canCall = dialInput.trim().length > 0 && isRegistered;
 
     return (
-        <KeyboardAvoidingView 
-            style={styles.screen} 
+        <KeyboardAvoidingView
+            style={styles.screen}
             behavior={Platform.OS === 'ios' ? 'padding' : undefined}
             keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
         >
@@ -58,9 +58,9 @@ export const DialerScreen: React.FC = () => {
             <View style={styles.header}>
                 {/* Left: hamburger */}
                 <TouchableOpacity
-                    onPress={() => setDrawerOpen(true)}
-                    style={styles.hamburgerBtn}
                     activeOpacity={0.8}
+                    style={styles.hamburgerBtn}
+                    onPress={() => setDrawerOpen(true)}
                 >
                     <Icon name="menu-outline" size={28} color="#AAB6D3" />
                 </TouchableOpacity>
@@ -99,7 +99,7 @@ export const DialerScreen: React.FC = () => {
             </View>
 
             {/* Main dialer area becomes scrollable so it shrinks properly */}
-            <ScrollView 
+            <ScrollView
                 contentContainerStyle={styles.dialerArea}
                 keyboardShouldPersistTaps="handled"
                 showsVerticalScrollIndicator={false}
@@ -108,21 +108,21 @@ export const DialerScreen: React.FC = () => {
 
                 <View style={styles.inputRow}>
                     <TextInput
-                        style={styles.input}
                         value={dialInput}
-                        onChangeText={setDialInput}
-                        placeholder="ex: 1002 ou sip:joao@servidor.com"
-                        placeholderTextColor="#3A4A60"
-                        autoCapitalize="none"
                         autoCorrect={false}
-                        keyboardType="default"
+                        style={styles.input}
                         returnKeyType="done"
+                        autoCapitalize="none"
+                        keyboardType="default"
+                        onChangeText={setDialInput}
                         onSubmitEditing={handleCall}
+                        placeholderTextColor="#3A4A60"
+                        placeholder="ex: 1002 ou sip:joao@servidor.com"
                     />
                     {dialInput.length > 0 && (
                         <TouchableOpacity
-                            onPress={() => setDialInput('')}
                             style={styles.clearBtn}
+                            onPress={() => setDialInput('')}
                         >
                             <Icon name="backspace-outline" size={18} color="#6B7A99" />
                         </TouchableOpacity>
@@ -130,10 +130,10 @@ export const DialerScreen: React.FC = () => {
                 </View>
 
                 <TouchableOpacity
-                    style={[styles.callBtn, { opacity: canCall ? 1 : 0.4 }]}
-                    onPress={handleCall}
                     disabled={!canCall}
                     activeOpacity={0.8}
+                    onPress={handleCall}
+                    style={[styles.callBtn, { opacity: canCall ? 1 : 0.4 }]}
                 >
                     <Icon name="call" size={22} color="#fff" />
                     <Text style={styles.callBtnText}>Ligar</Text>
@@ -152,142 +152,165 @@ export const DialerScreen: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-    screen: { flex: 1, backgroundColor: '#0B0F14' },
-    header: {
-        paddingTop: 52,
-        paddingBottom: 16,
-        paddingHorizontal: 24,
-        borderBottomWidth: 1,
-        borderBottomColor: '#1E2D47',
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        flexWrap: 'wrap',
-        gap: 8,
+    screen: {
+        flex: 1,
+        backgroundColor: '#0B0F14',
     },
-    title: { fontSize: 22, fontWeight: '800', color: '#EAF0FF' },
+    header: {
+        gap: 8,
+        paddingTop: 52,
+        flexWrap: 'wrap',
+        paddingBottom: 16,
+        flexDirection: 'row',
+        borderBottomWidth: 1,
+        alignItems: 'center',
+        paddingHorizontal: 24,
+        borderBottomColor: '#1E2D47',
+        justifyContent: 'space-between',
+    },
+    title: {
+        fontSize: 22,
+        fontWeight: '800',
+        color: '#EAF0FF',
+    },
     hamburgerBtn: {
         width: 40,
         height: 40,
+        borderWidth: 1,
         borderRadius: 12,
-        backgroundColor: '#121822',
         alignItems: 'center',
         justifyContent: 'center',
-        borderWidth: 1,
         borderColor: '#1E2D47',
+        backgroundColor: '#121822',
     },
     headerCenter: {
         flex: 1,
         paddingHorizontal: 12,
     },
     statusBadge: {
+        gap: 6,
+        marginTop: 4,
         flexDirection: 'row',
         alignItems: 'center',
-        marginTop: 4,
-        gap: 6,
     },
-    statusDot: { width: 8, height: 8, borderRadius: 4 },
-    statusText: { fontSize: 12, fontWeight: '700' },
+    statusDot: {
+        width: 8,
+        height: 8,
+        borderRadius: 4,
+    },
+    statusText: {
+        fontSize: 12,
+        fontWeight: '700',
+    },
     headerButtons: {
-        flexDirection: 'row',
         gap: 8,
+        flexDirection: 'row',
         alignItems: 'center',
     },
     reconnectBtn: {
+        borderWidth: 1,
+        borderRadius: 10,
+        paddingVertical: 10,
         flexDirection: 'row',
+        alignItems: 'center',
         paddingHorizontal: 14,
-        paddingVertical: 10,
-        backgroundColor: '#1A2D4A',
-        borderRadius: 10,
-        borderWidth: 1,
         borderColor: '#4F8CFF40',
-        alignItems: 'center',
+        backgroundColor: '#1A2D4A',
     },
-    reconnectText: { color: '#4F8CFF', fontWeight: '700', fontSize: 13 },
+    reconnectText: {
+        fontSize: 13,
+        fontWeight: '700',
+        color: '#4F8CFF',
+    },
     logoutBtn: {
-        paddingHorizontal: 14,
-        paddingVertical: 10,
-        backgroundColor: '#1A2536',
-        borderRadius: 10,
         borderWidth: 1,
-        borderColor: '#FF4D4D40',
+        borderRadius: 10,
+        paddingVertical: 10,
         alignItems: 'center',
+        paddingHorizontal: 14,
         justifyContent: 'center',
+        borderColor: '#FF4D4D40',
+        backgroundColor: '#1A2536',
     },
-
     dialerArea: {
         flexGrow: 1,
-        paddingHorizontal: 24,
         paddingTop: 80,
+        paddingHorizontal: 24,
     },
     fieldLabel: {
         fontSize: 12,
+        marginBottom: 10,
         fontWeight: '600',
         color: '#6B7A99',
-        marginBottom: 10,
-        textTransform: 'uppercase',
         letterSpacing: 0.5,
+        textTransform: 'uppercase',
     },
     inputRow: {
+        borderWidth: 1,
+        paddingRight: 8,
+        marginBottom: 20,
+        borderRadius: 14,
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#121822',
-        borderRadius: 14,
-        borderWidth: 1,
         borderColor: '#1E2D47',
-        marginBottom: 20,
-        paddingRight: 8,
+        backgroundColor: '#121822',
     },
     input: {
         flex: 1,
         height: 56,
-        paddingHorizontal: 18,
-        color: '#EAF0FF',
         fontSize: 18,
         fontWeight: '500',
+        color: '#EAF0FF',
+        paddingHorizontal: 18,
     },
     clearBtn: {
         width: 32,
         height: 32,
         borderRadius: 16,
+        alignItems: 'center',
+        justifyContent: 'center',
         backgroundColor: '#1E2D47',
-        alignItems: 'center',
-        justifyContent: 'center',
     },
-    clearIcon: { color: '#6B7A99', fontSize: 12, fontWeight: '700' },
+    clearIcon: {
+        fontSize: 12,
+        fontWeight: '700',
+        color: '#6B7A99',
+    },
     callBtn: {
-        flexDirection: 'row',
-        height: 58,
-        borderRadius: 16,
-        backgroundColor: '#20D17A',
-        alignItems: 'center',
-        justifyContent: 'center',
         gap: 10,
-        shadowColor: '#20D17A',
-        shadowOffset: { width: 0, height: 6 },
-        shadowOpacity: 0.35,
-        shadowRadius: 14,
+        height: 58,
         elevation: 8,
+        shadowRadius: 14,
+        borderRadius: 16,
+        shadowOpacity: 0.35,
+        flexDirection: 'row',
+        alignItems: 'center',
+        shadowColor: '#20D17A',
+        justifyContent: 'center',
+        backgroundColor: '#20D17A',
+        shadowOffset: { width: 0, height: 6 },
     },
-    callBtnIcon: { fontSize: 22 },
+    callBtnIcon: {
+        fontSize: 22,
+    },
     callBtnText: {
         fontSize: 17,
-        fontWeight: '800',
         color: '#fff',
+        fontWeight: '800',
         letterSpacing: 0.5,
     },
     warningBox: {
-        marginTop: 20,
-        backgroundColor: '#2D1A1A',
-        borderRadius: 12,
         padding: 14,
+        marginTop: 20,
         borderWidth: 1,
+        borderRadius: 12,
         borderColor: '#FF4D4D30',
+        backgroundColor: '#2D1A1A',
     },
     warningText: {
-        color: '#FF4D4D',
         fontSize: 13,
         fontWeight: '600',
+        color: '#FF4D4D',
         textAlign: 'center',
     },
 });

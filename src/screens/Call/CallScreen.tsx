@@ -1,11 +1,12 @@
 import { s } from './s';
+import Icon from 'react-native-vector-icons/Ionicons';
 
 import { useNavigation } from '@react-navigation/native';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { View, Text, TouchableOpacity, StatusBar } from 'react-native';
+
 import { useSipStore } from '../../state/sip/sipStore';
 import { getIsIncomingCall, getIsInCall } from '../../services/sip/sipSelectors';
-import Icon from 'react-native-vector-icons/Ionicons';
 
 /** Extrai iniciais de um SIP URI ou nome */
 const getInitials = (uri: string | null): string => {

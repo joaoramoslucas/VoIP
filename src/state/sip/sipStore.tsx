@@ -1,11 +1,11 @@
 // src/store/sip/sipStore.tsx
 import React, {
-  createContext,
-  useContext,
-  useEffect,
-  useMemo,
   useRef,
+  useMemo,
   useState,
+  useEffect,
+  useContext,
+  createContext,
 } from 'react';
 
 import type {
@@ -16,8 +16,8 @@ import type {
 
 import { sipNative } from '../../services/sip/sipNative';
 import { sipEvents } from '../../services/sip/sipEvents';
-import { credentialStorage } from '../../services/storage/credentialStorage';
 import { callHistory } from '../../screens/History/HistoryScreen';
+import { credentialStorage } from '../../services/storage/credentialStorage';
 
 type SipStoreState = {
   call: SipCallSnapshot;
@@ -144,10 +144,10 @@ export const SipStoreProvider: React.FC<React.PropsWithChildren> = ({ children }
     const incomingSub = sipEvents.onIncomingCall((payload) => {
       const next: SipCallSnapshot = {
         state: 'incoming',
-        message: 'Incoming call',
-        remoteUri: payload.from ?? null,
         direction: 'Incoming',
+        message: 'Incoming call',
         lastUpdatedAtMs: nowMs(),
+        remoteUri: payload.from ?? null,
       };
       setCall(next);
     });
@@ -213,9 +213,9 @@ export const SipStoreProvider: React.FC<React.PropsWithChildren> = ({ children }
     await initializeCore();
 
     const next: SipCallSnapshot = {
+      remoteUri: to,
       state: 'outgoing',
       message: 'Calling...',
-      remoteUri: to,
       direction: 'Outgoing',
       lastUpdatedAtMs: nowMs(),
     };

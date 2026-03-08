@@ -7,8 +7,8 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
-import { RootStackParams } from '../../app/RootStackParams';
 import { useSipStore } from '../../state/sip/sipStore';
+import { RootStackParams } from '../../app/RootStackParams';
 
 type Nav = NativeStackNavigationProp<RootStackParams, 'Login'>;
 
@@ -16,11 +16,11 @@ export const LoginScreen: React.FC = () => {
     const navigation = useNavigation<Nav>();
     const { registration, actions, lastUsedCredentials } = useSipStore();
 
+    const wasLoadingRef = useRef(false);
+    const [error, setError] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
     const [username, setUsername] = useState(lastUsedCredentials?.username ?? '');
     const [password, setPassword] = useState(lastUsedCredentials?.password ?? '');
-    const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState('');
-    const wasLoadingRef = useRef(false);
 
     // Auto-login is handled by SplashScreen before reaching Login
     // This screen is only shown when no account exists or user explicitly adds account
@@ -55,18 +55,18 @@ export const LoginScreen: React.FC = () => {
 
         if (Platform.OS === 'android') {
             await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.RECORD_AUDIO, {
+                buttonNegative: 'Negar',
+                buttonPositive: 'Permitir',
                 title: 'Permissão de Microfone',
                 message: 'O app precisa do microfone para chamadas SIP.',
-                buttonPositive: 'Permitir',
-                buttonNegative: 'Negar',
             });
             if (Number(Platform.Version) >= 33) {
                 try {
                     await PermissionsAndroid.request('android.permission.POST_NOTIFICATIONS' as any, {
+                        buttonNegative: 'Negar',
+                        buttonPositive: 'Permitir',
                         title: 'Permissão de Notificações',
                         message: 'Para alertar sobre chamadas recebidas.',
-                        buttonPositive: 'Permitir',
-                        buttonNegative: 'Negar',
                     });
                 } catch (_) { }
             }
@@ -111,30 +111,30 @@ export const LoginScreen: React.FC = () => {
                     <View style={styles.fieldGroup}>
                         <Text style={styles.label}>Usuário SIP</Text>
                         <TextInput
-                            style={styles.input}
                             value={username}
+                            autoCorrect={false}
+                            style={styles.input}
+                            returnKeyType="next"
+                            autoCapitalize="none"
+                            editable={!isLoading}
                             onChangeText={setUsername}
                             placeholder="ex: joao ou 1001"
                             placeholderTextColor="#4A5568"
-                            autoCapitalize="none"
-                            autoCorrect={false}
-                            editable={!isLoading}
-                            returnKeyType="next"
                         />
                     </View>
 
                     <View style={styles.fieldGroup}>
                         <Text style={styles.label}>Senha</Text>
                         <TextInput
-                            style={styles.input}
+                            secureTextEntry
                             value={password}
+                            style={styles.input}
+                            returnKeyType="done"
+                            editable={!isLoading}
                             onChangeText={setPassword}
                             placeholder="Sua senha SIP"
-                            placeholderTextColor="#4A5568"
-                            secureTextEntry
-                            editable={!isLoading}
-                            returnKeyType="done"
                             onSubmitEditing={handleLogin}
+                            placeholderTextColor="#4A5568"
                         />
                     </View>
 
@@ -145,10 +145,10 @@ export const LoginScreen: React.FC = () => {
                     ) : null}
 
                     <TouchableOpacity
-                        style={[styles.loginBtn, { opacity: canSubmit ? 1 : 0.5 }]}
+                        activeOpacity={0.85}
                         onPress={handleLogin}
                         disabled={!canSubmit}
-                        activeOpacity={0.85}
+                        style={[styles.loginBtn, { opacity: canSubmit ? 1 : 0.5 }]}
                     >
                         {isLoading ? (
                             <ActivityIndicator color="#fff" />
@@ -160,9 +160,9 @@ export const LoginScreen: React.FC = () => {
 
                 {/* SIP Config link */}
                 <TouchableOpacity
+                    activeOpacity={0.7}
                     style={styles.configLink}
                     onPress={() => navigation.navigate('SipConfig')}
-                    activeOpacity={0.7}
                 >
                     <Icon name="settings-outline" size={16} color="#4F8CFF" />
                     <Text style={styles.configLinkText}>Configurar servidor SIP</Text>
@@ -181,120 +181,122 @@ const styles = StyleSheet.create({
     },
     scroll: {
         flexGrow: 1,
-        paddingHorizontal: 24,
         paddingBottom: 40,
+        paddingHorizontal: 24,
     },
     logoSection: {
-        alignItems: 'center',
-        marginBottom: 40,
         marginTop: 80,
+        marginBottom: 40,
+        alignItems: 'center',
     },
     logoCircle: {
         width: 80,
         height: 80,
+        elevation: 8,
+        borderWidth: 2,
+        marginBottom: 16,
+        shadowRadius: 16,
         borderRadius: 40,
-        backgroundColor: '#1A2D4A',
+        shadowOpacity: 0.5,
         alignItems: 'center',
         justifyContent: 'center',
-        marginBottom: 16,
-        borderWidth: 2,
         borderColor: '#4F8CFF',
         shadowColor: '#4F8CFF',
+        backgroundColor: '#1A2D4A',
         shadowOffset: { width: 0, height: 0 },
-        shadowOpacity: 0.5,
-        shadowRadius: 16,
-        elevation: 8,
     },
-    logoIcon: { fontSize: 36 },
+    logoIcon: {
+        fontSize: 36,
+    },
     appName: {
         fontSize: 30,
+        letterSpacing: 1,
         fontWeight: '800',
         color: '#EAF0FF',
-        letterSpacing: 1,
     },
     tagline: {
         fontSize: 14,
-        color: '#6B7A99',
         marginTop: 6,
+        color: '#6B7A99',
     },
     card: {
-        backgroundColor: '#121822',
-        borderRadius: 20,
         padding: 24,
         borderWidth: 1,
+        borderRadius: 20,
         borderColor: '#1E2D47',
+        backgroundColor: '#121822',
     },
     cardTitle: {
         fontSize: 20,
+        marginBottom: 20,
         fontWeight: '700',
         color: '#EAF0FF',
-        marginBottom: 20,
     },
     fieldGroup: {
         marginBottom: 16,
     },
     label: {
         fontSize: 12,
+        marginBottom: 8,
         fontWeight: '600',
         color: '#6B7A99',
-        marginBottom: 8,
-        textTransform: 'uppercase',
         letterSpacing: 0.5,
+        textTransform: 'uppercase',
     },
     input: {
         height: 50,
-        backgroundColor: '#0E141D',
-        borderRadius: 12,
-        borderWidth: 1,
-        borderColor: '#1E2D47',
-        paddingHorizontal: 16,
-        color: '#EAF0FF',
         fontSize: 15,
+        borderWidth: 1,
+        borderRadius: 12,
+        color: '#EAF0FF',
+        paddingHorizontal: 16,
+        borderColor: '#1E2D47',
+        backgroundColor: '#0E141D',
     },
     errorBox: {
-        backgroundColor: '#2D1A1A',
-        borderRadius: 10,
         padding: 12,
-        marginBottom: 12,
         borderWidth: 1,
+        borderRadius: 10,
+        marginBottom: 12,
         borderColor: '#FF4D4D40',
+        backgroundColor: '#2D1A1A',
     },
     errorText: {
-        color: '#FF4D4D',
         fontSize: 13,
         fontWeight: '600',
+        color: '#FF4D4D',
     },
     loginBtn: {
         height: 52,
+        marginTop: 4,
+        elevation: 6,
+        shadowRadius: 12,
         borderRadius: 14,
-        backgroundColor: '#4F8CFF',
+        shadowOpacity: 0.4,
         alignItems: 'center',
         justifyContent: 'center',
-        marginTop: 4,
         shadowColor: '#4F8CFF',
+        backgroundColor: '#4F8CFF',
         shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.4,
-        shadowRadius: 12,
-        elevation: 6,
     },
     loginBtnText: {
-        color: '#fff',
         fontSize: 16,
+        color: '#fff',
         fontWeight: '700',
         letterSpacing: 0.5,
     },
     configLink: {
-        alignSelf: 'center',
+        gap: 8,
         marginTop: 24,
         paddingVertical: 8,
-        paddingHorizontal: 16,
+        alignSelf: 'center',
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 8,
+        paddingHorizontal: 16,
     },
     configLinkText: {
-        color: '#4F8CFF',
         fontSize: 14,
         fontWeight: '600',
+        color: '#4F8CFF',
     },
 });

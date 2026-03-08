@@ -1,15 +1,15 @@
 import { DeviceEventEmitter, type EmitterSubscription } from 'react-native';
 
 import type {
-  SipCallStateChangedPayload,
   SipIncomingCallPayload,
+  SipCallStateChangedPayload,
   SipRegistrationMappedState,
 } from './sipTypes';
 
 export const SIP_EVENT_NAMES = {
-  registration: 'onRegistrationState',
   call: 'onCallState',
   incoming: 'onIncomingCall',
+  registration: 'onRegistrationState',
 } as const;
 
 export const sipEvents = {

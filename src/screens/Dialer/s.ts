@@ -3,10 +3,22 @@ import { colors } from '../../theme/colors';
 import { spacing } from '../../theme/spacing';
 
 export const s = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.background, padding: spacing.xl },
-  subtitle: { color: colors.textSecondary, marginTop: spacing.xs, marginBottom: spacing.xl },
-  title: { color: colors.textPrimary, fontSize: 22, fontWeight: '800', marginTop: spacing.xl },
-
+  screen: {
+    flex: 1,
+    padding: spacing.xl,
+    backgroundColor: colors.background,
+  },
+  subtitle: {
+    marginTop: spacing.xs,
+    marginBottom: spacing.xl,
+    color: colors.textSecondary,
+  },
+  title: {
+    fontSize: 22,
+    fontWeight: '800',
+    marginTop: spacing.xl,
+    color: colors.textPrimary,
+  },
   card: {
     borderWidth: 1,
     borderRadius: 16,
@@ -14,7 +26,6 @@ export const s = StyleSheet.create({
     borderColor: colors.border,
     backgroundColor: colors.card,
   },
-
   input: {
     height: 54,
     fontSize: 16,
@@ -26,9 +37,11 @@ export const s = StyleSheet.create({
     paddingHorizontal: spacing.md,
     backgroundColor: '#0E141D',
   },
-
-  row: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.lg },
-
+  row: {
+    gap: spacing.sm,
+    flexDirection: 'row',
+    marginTop: spacing.lg,
+  },
   buttonPrimary: {
     flex: 1,
     height: 50,
@@ -47,9 +60,16 @@ export const s = StyleSheet.create({
     borderColor: colors.border,
     backgroundColor: '#1A2536',
   },
-
-  buttonText: { color: colors.textPrimary, fontWeight: '900' },
-  buttonTextSecondary: { color: colors.textSecondary, fontWeight: '900' },
-
-  smallStatus: { marginTop: spacing.md, color: colors.textSecondary },
+  buttonText: {
+    fontWeight: '900',
+    color: colors.textPrimary,
+  },
+  buttonTextSecondary: {
+    fontWeight: '900',
+    color: colors.textSecondary,
+  },
+  smallStatus: {
+    marginTop: spacing.md,
+    color: colors.textSecondary,
+  },
 });
