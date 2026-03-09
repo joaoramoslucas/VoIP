@@ -53,6 +53,7 @@ export const CallScreen: React.FC = () => {
     const [isMuted, setIsMuted] = useState(false);
     const [isSpeakerEnabled, setIsSpeakerEnabled] = useState(false);
     const [callDuration, setCallDuration] = useState(0);
+    const [showKeypad, setShowKeypad] = useState(false);
     const callStartTimeRef = useRef<number | null>(null);
 
     const isIncomingCall = useMemo(() => getIsIncomingCall(call), [call]);
@@ -110,6 +111,10 @@ export const CallScreen: React.FC = () => {
 
     const handleDecline = async () => {
         await actions.declineCall();
+    };
+
+    const handleDtmf = async (digit: string) => {
+        await actions.sendDtmf(digit);
     };
 
     const initials = getInitials(call.remoteUri);
@@ -202,12 +207,35 @@ export const CallScreen: React.FC = () => {
                             </View>
 
                             <View style={s.controlItem}>
-                                <TouchableOpacity style={s.controlCircle} activeOpacity={0.8}>
-                                    <Icon name="keypad" size={26} color="#AAB6D3" />
+                                <TouchableOpacity
+                                    onPress={() => setShowKeypad(!showKeypad)}
+                                    style={[s.controlCircle, showKeypad && s.controlCircleActive]}
+                                    activeOpacity={0.8}
+                                >
+                                    <Icon name="keypad" size={26} color={showKeypad ? "#fff" : "#AAB6D3"} />
                                 </TouchableOpacity>
                                 <Text style={s.controlLabel}>Teclado</Text>
                             </View>
                         </View>
+
+                        {showKeypad && (
+                            <View style={s.keypad}>
+                                {[['1','2','3'],['4','5','6'],['7','8','9'],['*','0','#']].map((row, i) => (
+                                    <View key={i} style={s.keypadRow}>
+                                        {row.map(digit => (
+                                            <TouchableOpacity
+                                                key={digit}
+                                                onPress={() => handleDtmf(digit)}
+                                                style={s.keypadBtn}
+                                                activeOpacity={0.7}
+                                            >
+                                                <Text style={s.keypadText}>{digit}</Text>
+                                            </TouchableOpacity>
+                                        ))}
+                                    </View>
+                                ))}
+                            </View>
+                        )}
 
                         <TouchableOpacity
                             onPress={handleHangUp}

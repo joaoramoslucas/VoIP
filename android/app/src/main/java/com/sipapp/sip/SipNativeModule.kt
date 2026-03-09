@@ -1044,6 +1044,29 @@ class SipNativeModule(private val reactContext: ReactApplicationContext) :
         }
     }
 
+    @ReactMethod
+    fun sendDtmf(params: ReadableMap, promise: Promise) {
+        val core = linphoneCore
+        if (core == null) {
+            promise.reject("NO_CORE", "Core not initialized")
+            return
+        }
+
+        try {
+            val digit = params.getString("digit") ?: ""
+            if (digit.isNotEmpty()) {
+                val call = core.currentCall
+                if (call != null) {
+                    call.sendDtmf(digit[0])
+                    Log.i(logTag, "sendDtmf(): sent $digit")
+                }
+            }
+            promise.resolve(true)
+        } catch (t: Throwable) {
+            promise.reject("DTMF_ERROR", t.message, t)
+        }
+    }
+
     override fun invalidate() {
         // Chamado quando o RN descarta o módulo
         try {

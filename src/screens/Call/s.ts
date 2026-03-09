@@ -196,4 +196,30 @@ export const s = StyleSheet.create({
         fontWeight: '700',
         color: '#AAB6D3',
     },
+    /* ───── DTMF Keypad ───── */
+    keypad: {
+        gap: 12,
+        marginTop: 20,
+        marginBottom: 20,
+    },
+    keypadRow: {
+        gap: 12,
+        flexDirection: 'row',
+        justifyContent: 'center',
+    },
+    keypadBtn: {
+        width: 70,
+        height: 70,
+        borderWidth: 1,
+        borderRadius: 35,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderColor: '#223047',
+        backgroundColor: '#1A2536',
+    },
+    keypadText: {
+        fontSize: 28,
+        fontWeight: '600',
+        color: '#EAF0FF',
+    },
 });

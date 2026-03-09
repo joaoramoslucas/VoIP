@@ -34,6 +34,7 @@ type SipStoreState = {
     initializeCore: () => Promise<void>;
     unregisterAccount: () => Promise<void>;
     startCall: (to: string) => Promise<void>;
+    sendDtmf: (digit: string) => Promise<void>;
     setMuted: (isMuted: boolean) => Promise<void>;
     setSpeakerEnabled: (isSpeakerEnabled: boolean) => Promise<void>;
     registerAccount: (credentials: SipAccountCredentials) => Promise<void>;
@@ -268,6 +269,11 @@ export const SipStoreProvider: React.FC<React.PropsWithChildren> = ({ children }
     }
   };
 
+  const sendDtmf = async (digit: string) => {
+    await initializeCore();
+    await sipNative.sendDtmf(digit);
+  };
+
   const storeValue = useMemo<SipStoreState>(() => {
     return {
       isCoreInitialized,
@@ -286,6 +292,7 @@ export const SipStoreProvider: React.FC<React.PropsWithChildren> = ({ children }
         setSpeakerEnabled,
         acceptCall,
         declineCall,
+        sendDtmf,
       },
     };
   }, [isCoreInitialized, lastUsedCredentials, registration, call]);

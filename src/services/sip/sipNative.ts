@@ -20,6 +20,7 @@ type SipNativeModuleType = {
   acceptCall: () => Promise<boolean>;
   declineCall: () => Promise<boolean>;
   getPushToken: () => Promise<string | null>;
+  sendDtmf: (params: { digit: string }) => Promise<boolean>;
   setMute: (params: { muted: boolean }) => Promise<boolean>;
   setPushToken: (params: { token: string }) => Promise<boolean>;
   register: (params: SipNativeRegisterParams) => Promise<boolean>;
@@ -59,6 +60,9 @@ export const sipNative = {
 
   setSpeaker: (speakerOn: boolean) =>
     assertNativeFunction('setSpeaker')({ speakerOn }),
+
+  sendDtmf: (digit: string) =>
+    assertNativeFunction('sendDtmf')({ digit }),
 
   hangup: () => assertNativeFunction('hangup')(),
 

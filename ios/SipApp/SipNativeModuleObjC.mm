@@ -1,10 +1,13 @@
 #import "SipNativeModuleObjC.h"
+#import "CallKitManager.h"
+#import "PushKitManager.h"
 #import <AVFoundation/AVFoundation.h>
 #import <linphone/linphone.h>
 
 @interface SipNativeModuleObjC()
 @property (nonatomic, assign) LinphoneCore *core;
 @property (nonatomic, strong) NSTimer *iterateTimer;
+@property (nonatomic, strong) NSUUID *currentCallUUID;
 @end
 
 static void registration_state_changed(LinphoneCore *lc, LinphoneProxyConfig *cfg, LinphoneRegistrationState cstate, const char *message) {
@@ -53,22 +56,41 @@ static void call_state_changed(LinphoneCore *lc, LinphoneCall *call, LinphoneCal
     NSString *remoteUri = [NSString stringWithUTF8String:uri];
     
     switch (cstate) {
-        case LinphoneCallIncomingReceived:
+        case LinphoneCallIncomingReceived: {
             state = @"incoming";
+            NSUUID *uuid = [NSUUID UUID];
+            module.currentCallUUID = uuid;
+            [[CallKitManager shared] reportIncomingCallWithUUID:uuid handle:remoteUri completion:^(NSError *error) {
+                if (error) NSLog(@"CallKit error: %@", error);
+            }];
             [module sendEventWithName:@"onIncomingCall" body:@{@"remoteUri": remoteUri}];
             break;
+        }
         case LinphoneCallOutgoingInit:
         case LinphoneCallOutgoingProgress:
-        case LinphoneCallOutgoingRinging:
+        case LinphoneCallOutgoingRinging: {
             state = @"outgoing";
+            if (!module.currentCallUUID) {
+                NSUUID *uuid = [NSUUID UUID];
+                module.currentCallUUID = uuid;
+                [[CallKitManager shared] reportOutgoingCallWithUUID:uuid handle:remoteUri];
+            }
             break;
+        }
         case LinphoneCallConnected:
         case LinphoneCallStreamsRunning:
             state = @"connected";
+            if (module.currentCallUUID) {
+                [[CallKitManager shared] reportCallConnectedWithUUID:module.currentCallUUID];
+            }
             break;
         case LinphoneCallEnd:
         case LinphoneCallReleased:
             state = @"ended";
+            if (module.currentCallUUID) {
+                [[CallKitManager shared] endCallWithUUID:module.currentCallUUID];
+                module.currentCallUUID = nil;
+            }
             break;
         case LinphoneCallError:
             state = @"error";
@@ -122,6 +144,21 @@ RCT_EXPORT_METHOD(initialize:(NSDictionary *)options
     @try {
         NSLog(@"[SipNativeModule] ========== INITIALIZE START ==========");
         
+        // CallKit callbacks
+        __weak typeof(self) weakSelf = self;
+        [CallKitManager shared].onAnswerCall = ^{
+            [weakSelf handleCallKitAnswer];
+        };
+        [CallKitManager shared].onEndCall = ^{
+            [weakSelf handleCallKitEnd];
+        };
+        
+        // PushKit callback
+        [PushKitManager shared].onIncomingPushCall = ^(NSDictionary *payload) {
+            NSLog(@"[SipNativeModule] Push call received: %@", payload);
+            // Linphone vai receber a chamada via SIP após o push acordar o app
+        };
+        
         LinphoneCoreVTable vtable = {0};
         vtable.registration_state_changed = registration_state_changed;
         vtable.call_state_changed = call_state_changed;
@@ -162,6 +199,26 @@ RCT_EXPORT_METHOD(initialize:(NSDictionary *)options
     }
 }
 
+- (void)handleCallKitAnswer {
+    if (self.core) {
+        LinphoneCall *call = linphone_core_get_current_call(self.core);
+        if (call) {
+            linphone_call_accept(call);
+        }
+    }
+}
+
+- (void)handleCallKitEnd {
+    if (self.core) {
+        LinphoneCall *call = linphone_core_get_current_call(self.core);
+        if (call) {
+            linphone_call_terminate(call);
+        } else {
+            linphone_core_terminate_all_calls(self.core);
+        }
+    }
+}
+
 RCT_EXPORT_METHOD(setPushToken:(NSDictionary *)params
                   resolver:(RCTPromiseResolveBlock)resolve
                   rejecter:(RCTPromiseRejectBlock)reject) {
@@ -170,7 +227,8 @@ RCT_EXPORT_METHOD(setPushToken:(NSDictionary *)params
 
 RCT_EXPORT_METHOD(getPushToken:(RCTPromiseResolveBlock)resolve
                   rejecter:(RCTPromiseRejectBlock)reject) {
-    resolve(@"");
+    NSString *token = [[NSUserDefaults standardUserDefaults] stringForKey:@"voip_push_token"];
+    resolve(token ?: @"");
 }
 
 RCT_EXPORT_METHOD(register:(NSDictionary *)params
@@ -334,6 +392,21 @@ RCT_EXPORT_METHOD(declineCall:(RCTPromiseResolveBlock)resolve
         LinphoneCall *call = linphone_core_get_current_call(self.core);
         if (call) {
             linphone_call_decline(call, LinphoneReasonDeclined);
+        }
+    }
+    resolve(@YES);
+}
+
+RCT_EXPORT_METHOD(sendDtmf:(NSDictionary *)params
+                  resolver:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject) {
+    if (self.core) {
+        NSString *digit = params[@"digit"] ?: @"";
+        if (digit.length > 0) {
+            LinphoneCall *call = linphone_core_get_current_call(self.core);
+            if (call) {
+                linphone_call_send_dtmf(call, [digit characterAtIndex:0]);
+            }
         }
     }
     resolve(@YES);
