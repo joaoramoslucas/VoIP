@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
-    View, Text, StyleSheet, Animated, StatusBar,
-    PermissionsAndroid, Platform,
+    View, Text, StyleSheet, Animated, StatusBar, Platform,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -10,6 +9,7 @@ import { RootStackParams } from '../../app/RootStackParams';
 import { multiAccountStorage } from '../../services/storage/credentialStorage';
 import { useSipStore } from '../../state/sip/sipStore';
 import { navigateToCall } from '../../app/navigationRef';
+import { PermissionsManager } from '../../utils/PermissionsManager';
 
 type Nav = NativeStackNavigationProp<RootStackParams, 'Splash'>;
 
@@ -65,58 +65,37 @@ export const SplashScreen: React.FC = () => {
     };
 
     const requestPermissionsAndProceed = async () => {
-        if (Platform.OS !== 'android') {
+        try {
+            // Step 1: Microphone
+            setStep(1);
+            setStatusMsg(PERMISSIONS_STEPS[0]);
+            animateProgress(0.33);
+            console.log('[Splash] Requesting microphone permission...');
+            await PermissionsManager.requestMicrophonePermission();
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            // Step 2: Notifications
+            setStep(2);
+            setStatusMsg(PERMISSIONS_STEPS[1]);
+            animateProgress(0.66);
+            console.log('[Splash] Requesting notification permission...');
+            await PermissionsManager.requestNotificationPermission();
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            // Step 3: Contacts
+            setStep(3);
+            setStatusMsg(PERMISSIONS_STEPS[2]);
+            animateProgress(1);
+            console.log('[Splash] Requesting contacts permission...');
+            await PermissionsManager.requestContactsPermission();
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            console.log('[Splash] All permissions requested, proceeding...');
             await proceed();
-            return;
+        } catch (error) {
+            console.error('[Splash] Error requesting permissions:', error);
+            await proceed();
         }
-
-        // Step 1: Microphone
-        setStep(1);
-        setStatusMsg(PERMISSIONS_STEPS[0]);
-        animateProgress(0.33);
-        await PermissionsAndroid.request(
-            PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
-            {
-                title: 'Permissão de Microfone',
-                message: 'O SipApp precisa do microfone para fazer e receber chamadas de voz.',
-                buttonPositive: 'Permitir',
-                buttonNegative: 'Agora não',
-            }
-        );
-
-        // Step 2: Notifications
-        setStep(2);
-        setStatusMsg(PERMISSIONS_STEPS[1]);
-        animateProgress(0.66);
-        if (Number(Platform.Version) >= 33) {
-            try {
-                await PermissionsAndroid.request(
-                    'android.permission.POST_NOTIFICATIONS' as any,
-                    {
-                        title: 'Notificações de Chamadas',
-                        message: 'Para alertar sobre chamadas recebidas mesmo com o app fechado.',
-                        buttonPositive: 'Permitir',
-                        buttonNegative: 'Agora não',
-                    }
-                );
-            } catch (_) { }
-        }
-
-        // Step 3: Contacts
-        setStep(3);
-        setStatusMsg(PERMISSIONS_STEPS[2]);
-        animateProgress(1);
-        await PermissionsAndroid.request(
-            PermissionsAndroid.PERMISSIONS.READ_CONTACTS,
-            {
-                title: 'Acesso aos Contatos',
-                message: 'Para exibir seus contatos do telefone na aba de contatos.',
-                buttonPositive: 'Permitir',
-                buttonNegative: 'Agora não',
-            }
-        );
-
-        await proceed();
     };
 
     const proceed = async () => {

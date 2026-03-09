@@ -70,6 +70,11 @@ export const SipStoreProvider: React.FC<React.PropsWithChildren> = ({ children }
     if (subscribedRef.current) return;
     subscribedRef.current = true;
 
+    // Initialize core FIRST so listeners are ready
+    sipNative.initialize({}).then(() => {
+      setIsCoreInitialized(true);
+    }).catch(console.error);
+
     const registrationSub = sipEvents.onRegistrationStateChanged((payload) => {
       const next: SipRegistrationSnapshot = {
         state: payload.state,

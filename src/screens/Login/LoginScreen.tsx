@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
     View, Text, TextInput, TouchableOpacity,
-    PermissionsAndroid, ScrollView, StatusBar, KeyboardAvoidingView, Platform, ActivityIndicator,
+    ScrollView, StatusBar, KeyboardAvoidingView, Platform, ActivityIndicator,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useNavigation } from '@react-navigation/native';
@@ -9,6 +9,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import { useSipStore } from '../../state/sip/sipStore';
 import { RootStackParams } from '../../app/RootStackParams';
+import { PermissionsManager } from '../../utils/PermissionsManager';
 
 type Nav = NativeStackNavigationProp<RootStackParams, 'Login'>;
 
@@ -52,25 +53,6 @@ export const LoginScreen: React.FC = () => {
     const handleLogin = async () => {
         if (!canSubmit) return;
         setError('');
-
-        if (Platform.OS === 'android') {
-            await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.RECORD_AUDIO, {
-                buttonNegative: 'Negar',
-                buttonPositive: 'Permitir',
-                title: 'Permissão de Microfone',
-                message: 'O app precisa do microfone para chamadas SIP.',
-            });
-            if (Number(Platform.Version) >= 33) {
-                try {
-                    await PermissionsAndroid.request('android.permission.POST_NOTIFICATIONS' as any, {
-                        buttonNegative: 'Negar',
-                        buttonPositive: 'Permitir',
-                        title: 'Permissão de Notificações',
-                        message: 'Para alertar sobre chamadas recebidas.',
-                    });
-                } catch (_) { }
-            }
-        }
 
         setIsLoading(true);
         try {
