@@ -17,7 +17,8 @@ import type {
 import { sipNative } from '../../services/sip/sipNative';
 import { sipEvents } from '../../services/sip/sipEvents';
 import { callHistory } from '../../screens/History/HistoryScreen';
-import { credentialStorage } from '../../services/storage/credentialStorage';
+import { credentialStorage } from '../../services/storage/secureCredentialStorage';
+import { codecStorage } from '../../services/storage/codecStorage';
 
 type SipStoreState = {
   call: SipCallSnapshot;
@@ -167,7 +168,11 @@ export const SipStoreProvider: React.FC<React.PropsWithChildren> = ({ children }
 
   const initializeCore = async () => {
     if (isCoreInitialized) return;
-    await sipNative.initialize({});
+    
+    // Carregar codecs selecionados
+    const enabledCodecs = await codecStorage.load();
+    
+    await sipNative.initialize({ enabledCodecs });
     setIsCoreInitialized(true);
   };
 
@@ -175,7 +180,7 @@ export const SipStoreProvider: React.FC<React.PropsWithChildren> = ({ children }
     await initializeCore();
 
     setLastUsedCredentials(credentials);
-    credsRef.current = credentials;
+    // NÃO salvar credsRef aqui - só depois do sucesso
 
     await sipNative.register({
       sipDomain: credentials.sipDomain,
@@ -183,6 +188,9 @@ export const SipStoreProvider: React.FC<React.PropsWithChildren> = ({ children }
       password: credentials.password,
       transport: credentials.transport,
     });
+    
+    // Salvar apenas após registro bem-sucedido
+    credsRef.current = credentials;
   };
 
   const autoLogin = async (): Promise<boolean> => {

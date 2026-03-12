@@ -285,7 +285,7 @@ class SipNativeModule(private val reactContext: ReactApplicationContext) :
             core.isMicEnabled = true
 
             // ==============================
-            // CODECS
+            // CODECS - LISTA COMPLETA
             // ==============================
 
             try {
@@ -300,15 +300,32 @@ class SipNativeModule(private val reactContext: ReactApplicationContext) :
                     val mimeTypeLower =
                         (getMimeTypeMethod?.invoke(payloadType) as? String ?: "").lowercase()
 
+                    // Lista COMPLETA de codecs suportados
                     val isAllowed =
-                        mimeTypeLower == "opus" ||
-                        mimeTypeLower == "pcmu" ||
-                        mimeTypeLower == "pcma"
+                        // Wideband (melhor qualidade)
+                        mimeTypeLower == "opus" ||        // Opus - melhor codec moderno
+                        mimeTypeLower == "speex" ||       // Speex wideband
+                        mimeTypeLower == "g722" ||        // G.722 - HD voice
+                        mimeTypeLower == "amr-wb" ||      // AMR wideband
+                        mimeTypeLower == "aac-eld" ||     // AAC-ELD
+                        // Narrowband (compatibilidade)
+                        mimeTypeLower == "pcmu" ||        // G.711 μ-law (padrão US)
+                        mimeTypeLower == "pcma" ||        // G.711 A-law (padrão EU)
+                        mimeTypeLower == "gsm" ||         // GSM
+                        mimeTypeLower == "ilbc" ||        // iLBC - boa para redes ruins
+                        mimeTypeLower == "g729" ||        // G.729 - baixo bitrate
+                        mimeTypeLower == "amr" ||         // AMR narrowband
+                        mimeTypeLower == "silk" ||        // SILK (Skype codec)
+                        mimeTypeLower == "codec2" ||      // Codec2 - ultra low bitrate
+                        mimeTypeLower == "g726-16" ||     // G.726 16kbps
+                        mimeTypeLower == "g726-24" ||     // G.726 24kbps
+                        mimeTypeLower == "g726-32" ||     // G.726 32kbps
+                        mimeTypeLower == "g726-40"        // G.726 40kbps
 
                     setPayloadEnabledCompat(payloadType, isAllowed)
                 }
 
-                Log.i(logTag, "CODECS filtered: opus/pcmu/pcma")
+                Log.i(logTag, "CODECS: Todos os codecs suportados habilitados")
 
                 logEnabledAudioCodecs(core)
 
@@ -635,7 +652,16 @@ class SipNativeModule(private val reactContext: ReactApplicationContext) :
                 return
             }
 
-            Log.i(logTag, "register() REAL domain=$sipDomain user=$username transport=$transport")
+            // Validar transporte
+            val validTransport = when (transport.lowercase()) {
+                "tcp", "udp", "tls" -> transport.lowercase()
+                else -> {
+                    Log.w(logTag, "Transporte inválido '$transport', usando TCP")
+                    "tcp"
+                }
+            }
+
+            Log.i(logTag, "register() domain=$sipDomain user=$username transport=$validTransport")
 
             val core = linphoneCore!!
             val factory = Factory.instance()
@@ -671,10 +697,15 @@ class SipNativeModule(private val reactContext: ReactApplicationContext) :
             proxyConfig.identityAddress = identityAddress
 
             // ADICIONAR SERVIDOR (inclui transporte)
-            proxyConfig.serverAddr = "sip:$sipDomain;transport=$transport"    // <------ ALTERAR AQUI
+            val serverAddr = "sip:$sipDomain;transport=$validTransport"
+            proxyConfig.serverAddr = serverAddr
+            Log.i(logTag, "ProxyConfig serverAddr: $serverAddr")
+            
             proxyConfig.edit()
             proxyConfig.isRegisterEnabled = true
             proxyConfig.done()
+            
+            Log.i(logTag, "ProxyConfig configurado: identity=$identity server=$serverAddr")
 
             core.addProxyConfig(proxyConfig)
             core.defaultProxyConfig = proxyConfig

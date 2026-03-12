@@ -24,13 +24,23 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
   ) -> Bool {
-    // Audio session
+    // Configure audio session for VoIP (igual ao Android)
     let audioSession = AVAudioSession.sharedInstance()
-    try? audioSession.setCategory(.playAndRecord, mode: .voiceChat, options: [.allowBluetooth, .defaultToSpeaker])
-    try? audioSession.setActive(true)
+    do {
+      try audioSession.setCategory(
+        .playAndRecord,
+        mode: .voiceChat,
+        options: [.allowBluetooth, .defaultToSpeaker]
+      )
+      try audioSession.setActive(true)
+      print("[AppDelegate] Audio session configured for VoIP")
+    } catch {
+      print("[AppDelegate] Audio session error: \(error)")
+    }
     
-    // PushKit
+    // Register for VoIP push notifications
     AppDelegateObjC.setupPushKit()
+    print("[AppDelegate] PushKit registered")
     
     let delegate = ReactNativeDelegate()
     let factory = RCTReactNativeFactory(delegate: delegate)

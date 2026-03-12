@@ -1,12 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
-    View, Text, StyleSheet, Animated, StatusBar, Platform,
+    View, Text, StyleSheet, Animated, StatusBar, Platform, DeviceEventEmitter, NativeEventEmitter, NativeModules, NativeModules as RNNativeModules,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { RootStackParams } from '../../app/RootStackParams';
-import { multiAccountStorage } from '../../services/storage/credentialStorage';
+import { multiAccountStorage } from '../../services/storage/secureCredentialStorage';
 import { useSipStore } from '../../state/sip/sipStore';
 import { navigateToCall } from '../../app/navigationRef';
 import { PermissionsManager } from '../../utils/PermissionsManager';
@@ -30,6 +31,26 @@ export const SplashScreen: React.FC = () => {
     const [step, setStep] = useState(0);
     const [statusMsg, setStatusMsg] = useState('Iniciando...');
 
+    // Verificar se foi aberto por notificação de chamada (Android SharedPreferences)
+    useEffect(() => {
+        checkIncomingCallFlag();
+    }, []);
+
+    const checkIncomingCallFlag = async () => {
+        try {
+            const hasCall = await AsyncStorage.getItem('hasIncomingCall');
+            if (hasCall === 'true') {
+                console.log('[Splash] Detectado flag de chamada - pulando splash');
+                await AsyncStorage.removeItem('hasIncomingCall');
+                await AsyncStorage.removeItem('incomingCaller');
+                fastTrackToCall();
+                return;
+            }
+        } catch (error) {
+            console.log('[Splash] Erro ao verificar flag:', error);
+        }
+    };
+
     useEffect(() => {
         // If there's already an active call (app woke up from dead via notification),
         // skip animation and permissions — go straight to DrawerHome then Call.
@@ -42,7 +63,7 @@ export const SplashScreen: React.FC = () => {
         Animated.parallel([
             Animated.timing(logoOpacity, {
                 toValue: 1,
-                duration: 800,
+                duration: 400,
                 useNativeDriver: true,
             }),
             Animated.spring(logoScale, {
@@ -55,6 +76,25 @@ export const SplashScreen: React.FC = () => {
             requestPermissionsAndProceed();
         });
     }, []);
+
+    const fastTrackToCall = async () => {
+        console.log('[Splash] Fast track to call - iniciando');
+        const active = await multiAccountStorage.getActive();
+        if (active) {
+            console.log('[Splash] Conta ativa encontrada, fazendo autoLogin');
+            await actions.autoLogin();
+            console.log('[Splash] AutoLogin completo, navegando para DrawerHome');
+            navigation.replace('DrawerHome');
+            console.log('[Splash] Aguardando 200ms antes de navegar para Call');
+            setTimeout(() => {
+                console.log('[Splash] Navegando para Call agora');
+                navigateToCall();
+            }, 200);
+        } else {
+            console.log('[Splash] Nenhuma conta ativa, indo para Login');
+            navigation.replace('Login');
+        }
+    };
 
     const animateProgress = (to: number) => {
         Animated.timing(barWidth, {
@@ -109,7 +149,7 @@ export const SplashScreen: React.FC = () => {
                 setTimeout(() => {
                     const hasCall = call.state === 'incoming' || call.state === 'connected';
                     proceedToApp(false, hasCall);
-                }, 800);
+                }, 300);
                 return;
             }
         }
@@ -128,7 +168,7 @@ export const SplashScreen: React.FC = () => {
         navigation.replace('DrawerHome');
         // If there's a call in progress, go to CallScreen after DrawerHome mounts
         if (hasActiveCall) {
-            setTimeout(() => navigateToCall(), 300);
+            setTimeout(() => navigateToCall(), 100);
         }
     };
 

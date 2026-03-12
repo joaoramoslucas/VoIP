@@ -81,6 +81,10 @@
     [session setCategory:AVAudioSessionCategoryPlayAndRecord mode:AVAudioSessionModeVoiceChat options:0 error:nil];
     [session setActive:YES error:nil];
     
+    // Salvar flag quando usuário aceitar a chamada
+    [[NSUserDefaults standardUserDefaults] setObject:@"true" forKey:@"hasIncomingCall"];
+    [[NSUserDefaults standardUserDefaults] synchronize];
+    
     if (self.onAnswerCall) {
         self.onAnswerCall();
     }

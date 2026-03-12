@@ -1,7 +1,9 @@
 // src/services/sip/sipNative.ts
 import { NativeModules } from 'react-native';
 
-export type SipNativeInitializeOptions = Record<string, unknown>;
+export type SipNativeInitializeOptions = {
+  enabledCodecs?: string[];
+};
 
 export type SipNativeRegisterParams = {
   username: string;
@@ -27,6 +29,7 @@ type SipNativeModuleType = {
   setSpeaker: (params: { speakerOn: boolean }) => Promise<boolean>;
   startCall: (params: SipNativeStartCallParams) => Promise<boolean>;
   initialize: (options: SipNativeInitializeOptions) => Promise<boolean>;
+  setEnabledCodecs: (params: { codecs: string[] }) => Promise<boolean>;
 };
 
 const sipNativeModule = NativeModules.SipNativeModule as SipNativeModuleType | undefined;
@@ -63,6 +66,9 @@ export const sipNative = {
 
   sendDtmf: (digit: string) =>
     assertNativeFunction('sendDtmf')({ digit }),
+
+  setEnabledCodecs: (codecs: string[]) =>
+    assertNativeFunction('setEnabledCodecs')({ codecs }),
 
   hangup: () => assertNativeFunction('hangup')(),
 

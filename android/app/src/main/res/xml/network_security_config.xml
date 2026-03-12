@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- 
+        🔒 CONFIGURAÇÃO DE SEGURANÇA DE REDE
+        
+        Por padrão, APENAS HTTPS/TLS é permitido.
+        HTTP não criptografado é BLOQUEADO.
+    -->
+    
+    <!-- Configuração padrão: APENAS TLS -->
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <!-- Confiar em certificados do sistema -->
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+    
+    <!-- 
+        EXCEÇÃO: Permitir cleartext apenas para servidores SIP específicos
+        
+        ⚠️ IMPORTANTE: Adicione aqui APENAS servidores que você controla
+        e que NÃO suportam TLS.
+        
+        Exemplo:
+        <domain-config cleartextTrafficPermitted="true">
+            <domain includeSubdomains="true">sip.meuservidor.com</domain>
+        </domain-config>
+    -->
+    
+    <!-- Servidor de teste Linphone (permite cleartext para testes) -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">sip.linphone.org</domain>
+    </domain-config>
+    
+    <!-- Metro Bundler (desenvolvimento) -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">localhost</domain>
+        <domain includeSubdomains="true">127.0.0.1</domain>
+        <domain includeSubdomains="true">10.0.2.2</domain>
+    </domain-config>
+    
+    <!-- 
+        Para adicionar seu servidor SIP:
+        
+        1. Se seu servidor SUPORTA TLS (porta 5061):
+           - NÃO adicione aqui
+           - Use transport="tls" no app
+           
+        2. Se seu servidor NÃO SUPORTA TLS (porta 5060):
+           - Adicione o domínio abaixo
+           - Exemplo:
+           
+           <domain-config cleartextTrafficPermitted="true">
+               <domain includeSubdomains="true">sip.empresa.com</domain>
+           </domain-config>
+    -->
+    
+    <!-- Debug (apenas para desenvolvimento) -->
+    <debug-overrides>
+        <!-- Permitir cleartext em debug builds -->
+        <trust-anchors>
+            <certificates src="user" />
+        </trust-anchors>
+    </debug-overrides>
+</network-security-config>

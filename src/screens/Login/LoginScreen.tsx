@@ -1,11 +1,13 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
     View, Text, TextInput, TouchableOpacity,
-    ScrollView, StatusBar, KeyboardAvoidingView, Platform, ActivityIndicator,
+    StatusBar, Platform, ActivityIndicator,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { useSipStore } from '../../state/sip/sipStore';
 import { RootStackParams } from '../../app/RootStackParams';
@@ -20,8 +22,8 @@ export const LoginScreen: React.FC = () => {
     const wasLoadingRef = useRef(false);
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    const [username, setUsername] = useState(lastUsedCredentials?.username ?? '');
-    const [password, setPassword] = useState(lastUsedCredentials?.password ?? '');
+    const [username, setUsername] = useState('');
+    const [password, setPassword] = useState('');
 
     // Auto-login is handled by SplashScreen before reaching Login
     // This screen is only shown when no account exists or user explicitly adds account
@@ -46,22 +48,30 @@ export const LoginScreen: React.FC = () => {
     }, [registration.state, navigation]);
 
     const canSubmit = useMemo(
-        () => username.trim().length > 0 && !isLoading,
-        [username, isLoading]
+        () => username.trim().length > 0 && password.trim().length > 0 && !isLoading,
+        [username, password, isLoading]
     );
 
     const handleLogin = async () => {
         if (!canSubmit) return;
+        
+        // Carrega configuração SIP
+        const configJson = await AsyncStorage.getItem('@sipapp_sip_config');
+        const config = configJson ? JSON.parse(configJson) : null;
+        
+        if (!config?.sipDomain) {
+            setError('Configure o servidor SIP antes de fazer login.');
+            return;
+        }
+        
         setError('');
-
         setIsLoading(true);
         try {
-            const saved = lastUsedCredentials;
             await actions.registerAccount({
-                sipDomain: saved?.sipDomain ?? 'sip.linphone.org',
+                sipDomain: config.sipDomain,
                 username: username.trim(),
                 password,
-                transport: saved?.transport ?? 'tcp',
+                transport: config.transport ?? 'tcp',
             });
         } catch {
             setIsLoading(false);
@@ -70,13 +80,16 @@ export const LoginScreen: React.FC = () => {
     };
 
     return (
-        <KeyboardAvoidingView
-            style={styles.screen}
-            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-            keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
-        >
+        <View style={styles.screen}>
             <StatusBar barStyle="light-content" backgroundColor="#0B0F14" />
-            <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+            <KeyboardAwareScrollView
+                enableOnAndroid
+                enableAutomaticScroll
+                extraScrollHeight={80}
+                keyboardShouldPersistTaps="handled"
+                contentContainerStyle={styles.scroll}
+                showsVerticalScrollIndicator={false}
+            >
                 {/* Logo */}
                 <View style={styles.logoSection}>
                     <View style={styles.logoCircle}>
@@ -144,13 +157,13 @@ export const LoginScreen: React.FC = () => {
                 <TouchableOpacity
                     activeOpacity={0.7}
                     style={styles.configLink}
-                    onPress={() => navigation.navigate('SipConfig')}
+                    onPress={() => navigation.navigate('SipConfig', { preLogin: true })}
                 >
                     <Icon name="settings-outline" size={16} color="#4F8CFF" />
                     <Text style={styles.configLinkText}>Configurar servidor SIP</Text>
                 </TouchableOpacity>
-            </ScrollView>
-        </KeyboardAvoidingView>
+            </KeyboardAwareScrollView>
+        </View>
     );
 };
 
@@ -163,12 +176,12 @@ const styles = StyleSheet.create({
     },
     scroll: {
         flexGrow: 1,
-        paddingBottom: 40,
+        paddingTop: 80,
+        paddingBottom: 60,
         paddingHorizontal: 24,
     },
     logoSection: {
-        marginTop: 80,
-        marginBottom: 40,
+        marginBottom: 32,
         alignItems: 'center',
     },
     logoCircle: {
@@ -205,6 +218,7 @@ const styles = StyleSheet.create({
         padding: 24,
         borderWidth: 1,
         borderRadius: 20,
+        marginBottom: 24,
         borderColor: '#1E2D47',
         backgroundColor: '#121822',
     },
@@ -251,6 +265,7 @@ const styles = StyleSheet.create({
     loginBtn: {
         height: 52,
         marginTop: 4,
+        marginBottom: 16,
         elevation: 6,
         shadowRadius: 12,
         borderRadius: 14,

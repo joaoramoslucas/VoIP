@@ -48,6 +48,11 @@
         NSDictionary *data = payload.dictionaryPayload;
         NSString *caller = data[@"caller"] ?: @"Unknown";
         
+        // Salvar flag no UserDefaults (AsyncStorage no iOS usa NSUserDefaults)
+        [[NSUserDefaults standardUserDefaults] setObject:@"true" forKey:@"hasIncomingCall"];
+        [[NSUserDefaults standardUserDefaults] setObject:caller forKey:@"incomingCaller"];
+        [[NSUserDefaults standardUserDefaults] synchronize];
+        
         NSUUID *uuid = [NSUUID UUID];
         [[CallKitManager shared] reportIncomingCallWithUUID:uuid handle:caller completion:^(NSError *error) {
             if (error) {

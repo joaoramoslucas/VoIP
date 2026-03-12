@@ -2,11 +2,14 @@ package com.sipapp
 
 import android.os.Bundle
 import android.os.Build
+import android.content.Intent
 import android.view.WindowManager
 import com.facebook.react.ReactActivity
 import com.facebook.react.ReactActivityDelegate
 import com.facebook.react.defaults.DefaultReactActivityDelegate
 import com.facebook.react.defaults.DefaultNewArchitectureEntryPoint.fabricEnabled
+import com.facebook.react.modules.core.DeviceEventManagerModule
+import android.content.Context
 
 class MainActivity : ReactActivity() {
 
@@ -24,6 +27,34 @@ class MainActivity : ReactActivity() {
         WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON or
         WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
       )
+    }
+    
+    // Verificar se foi aberto por notificação de chamada
+    handleIncomingCallIntent(intent)
+  }
+
+  override fun onNewIntent(intent: Intent?) {
+    super.onNewIntent(intent)
+    intent?.let { handleIncomingCallIntent(it) }
+  }
+
+  private fun handleIncomingCallIntent(intent: Intent?) {
+    if (intent?.getBooleanExtra("incoming_call", false) == true) {
+      val caller = intent.getStringExtra("caller") ?: "Unknown"
+      
+      // Salvar flag - AsyncStorage usa SharedPreferences com prefixo
+      val prefs = getSharedPreferences("RCTAsyncLocalStorage_V1", Context.MODE_PRIVATE)
+      prefs.edit()
+        .putString("hasIncomingCall", "true")
+        .putString("incomingCaller", caller)
+        .apply()
+      
+      // Enviar evento também
+      android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+        reactInstanceManager?.currentReactContext
+          ?.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
+          ?.emit("navigateToIncomingCall", caller)
+      }, 500)
     }
   }
 
